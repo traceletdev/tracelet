@@ -3,14 +3,22 @@ package integration
 import (
     "os"
     "path/filepath"
+    "runtime"
     "testing"
 
     "tracelet/internal/config"
     "tracelet/internal/lint"
 )
 
+func getFixtureDir(name string) string {
+    _, filename, _, _ := runtime.Caller(1) // Skip getFixtureDir, get test function's file
+    testDir := filepath.Dir(filename)
+    repoRoot := filepath.Join(testDir, "..", "..")
+    return filepath.Join(repoRoot, "tests", "fixtures", name)
+}
+
 func TestNextBasic_LintOverBudget(t *testing.T) {
-    fixtureDir := filepath.FromSlash("../fixtures/next-basic")
+    fixtureDir := getFixtureDir("next-basic")
     cwd, _ := os.Getwd()
     if err := os.Chdir(fixtureDir); err != nil {
         t.Fatalf("chdir: %v", err)
@@ -27,7 +35,7 @@ func TestNextBasic_LintOverBudget(t *testing.T) {
 }
 
 func TestViteBasic_LintOverBudget(t *testing.T) {
-    fixtureDir := filepath.FromSlash("../fixtures/vite-basic")
+    fixtureDir := getFixtureDir("vite-basic")
     cwd, _ := os.Getwd()
     if err := os.Chdir(fixtureDir); err != nil {
         t.Fatalf("chdir: %v", err)
