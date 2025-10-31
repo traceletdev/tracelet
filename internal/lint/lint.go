@@ -73,6 +73,74 @@ func Run(req Request) (Results, stats.Stats) {
 		}
 	}
 
+	// missing-image-dimensions
+	if lvl := req.Config.Rules["missing-image-dimensions"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".html", ".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".html", ".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".html") || strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.MissingImageDimensions(file, lvl)...)
+			}
+		}
+	}
+
+	// render-blocking-resources
+	if lvl := req.Config.Rules["render-blocking-resources"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".html", ".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".html", ".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".html") || strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.RenderBlockingResources(file, lvl)...)
+			}
+		}
+	}
+
+	// missing-preconnect
+	if lvl := req.Config.Rules["missing-preconnect"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".html", ".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".html", ".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".html") || strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.MissingPreconnect(file, lvl)...)
+			}
+		}
+	}
+
+	// missing-alt-text
+	if lvl := req.Config.Rules["missing-alt-text"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".html", ".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".html", ".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".html") || strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.MissingAltText(file, lvl)...)
+			}
+		}
+	}
+
 	// Normalize levels based on config where needed
 	for i := range res {
 		if res[i].Level == "" {

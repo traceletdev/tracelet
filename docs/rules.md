@@ -92,6 +92,107 @@ VS Code extension provides Quick Fix to add `font-display: swap` automatically.
 - `optional` - Use fallback if font not cached
 - `block` - Hide text until font loads (not recommended)
 
+### `missing-image-dimensions`
+
+Flags images missing `width` and `height` attributes.
+
+**Default Severity:** `warn`
+
+**What it checks:**
+- `<img>` tags without both `width` and `height` attributes
+
+**Example violation:**
+```html
+<img src="hero.jpg" alt="Hero">
+<!-- Should have: <img src="hero.jpg" alt="Hero" width="800" height="600"> -->
+```
+
+**Why it matters:**
+Without dimensions, browsers can't reserve space for images, causing layout shift (CLS) when images load.
+
+**Note:** Cannot be autofixed as it requires actual image dimensions. Use image processing tools or manually add dimensions.
+
+### `render-blocking-resources`
+
+Flags CSS and JavaScript resources that block page rendering.
+
+**Default Severity:** `warn`
+
+**What it checks:**
+- `<script>` tags in `<head>` without `defer`, `async`, or `type="module"`
+- `<link rel="stylesheet">` tags in `<head>` without `rel="preload"` or `media="print"`
+
+**Example violations:**
+```html
+<head>
+  <script src="analytics.js"></script> <!-- Should have defer or async -->
+  <link rel="stylesheet" href="styles.css"> <!-- Should be preloaded -->
+</head>
+```
+
+**Quick Fix:**
+Autofix can add `defer` to scripts. For CSS, manually add `rel="preload"` for critical stylesheets.
+
+**Best Practices:**
+- Use `defer` for scripts that don't need to run immediately
+- Use `async` for independent scripts (analytics, widgets)
+- Preload critical CSS with `<link rel="preload" as="style" href="critical.css">`
+
+### `missing-preconnect`
+
+Flags external domains used without preconnect or dns-prefetch.
+
+**Default Severity:** `info`
+
+**What it checks:**
+- External domains referenced in `href`, `src`, or `action` attributes
+- Checks if domain has `<link rel="preconnect">` or `<link rel="dns-prefetch">` in `<head>`
+
+**Example violation:**
+```html
+<head>
+  <!-- Missing preconnect for external domain -->
+</head>
+<body>
+  <img src="https://cdn.example.com/image.jpg">
+</body>
+```
+
+**Recommended fix:**
+```html
+<head>
+  <link rel="preconnect" href="https://cdn.example.com">
+</head>
+```
+
+**Best Practices:**
+- Use `preconnect` for critical third-party domains (fonts, APIs, CDNs)
+- Use `dns-prefetch` for less critical domains
+- Add preconnect links early in `<head>` for better performance
+
+### `missing-alt-text`
+
+Flags images missing `alt` attribute.
+
+**Default Severity:** `warn`
+
+**What it checks:**
+- `<img>` tags without `alt` attribute
+
+**Example violation:**
+```html
+<img src="logo.png">
+<!-- Should have: <img src="logo.png" alt="Company Logo"> -->
+```
+
+**Quick Fix:**
+Autofix adds `alt=""` (empty alt for decorative images). Update manually with descriptive text for meaningful images.
+
+**Best Practices:**
+- Always include `alt` text for accessibility
+- Use empty `alt=""` for purely decorative images
+- Use descriptive text for images that convey information
+
 ## Configuring Rules
 
 ### Disable a Rule
@@ -124,7 +225,11 @@ For strict performance requirements:
   "rules": {
     "route-initial-js": "error",
     "unoptimized-image": "error",
-    "font-display": "warn"
+    "font-display": "warn",
+    "missing-image-dimensions": "error",
+    "render-blocking-resources": "error",
+    "missing-preconnect": "warn",
+    "missing-alt-text": "warn"
   }
 }
 ```
@@ -136,7 +241,11 @@ For development/learning:
   "rules": {
     "route-initial-js": "warn",
     "unoptimized-image": "info",
-    "font-display": "info"
+    "font-display": "info",
+    "missing-image-dimensions": "info",
+    "render-blocking-resources": "info",
+    "missing-preconnect": "off",
+    "missing-alt-text": "info"
   }
 }
 ```

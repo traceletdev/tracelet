@@ -126,7 +126,7 @@ func runLint(args []string) {
 func runFix(args []string) {
 	fs := flag.NewFlagSet("fix", flag.ExitOnError)
 	var (
-		ruleID  = fs.String("rule", "", "fix specific rule (unoptimized-image, font-display)")
+		ruleID  = fs.String("rule", "", "fix specific rule (unoptimized-image, font-display, render-blocking-resources, missing-alt-text)")
 		apply   = fs.Bool("apply", false, "apply fixes (default: dry-run)")
 		cfgPath = fs.String("config", "", "path to config")
 	)
@@ -157,7 +157,7 @@ func runFix(args []string) {
 	// Group by file
 	fixesByFile := make(map[string][]lint.Results)
 	for _, r := range toFix {
-		if r.RuleID == "unoptimized-image" || r.RuleID == "font-display" {
+		if r.RuleID == "unoptimized-image" || r.RuleID == "font-display" || r.RuleID == "render-blocking-resources" || r.RuleID == "missing-alt-text" {
 			if r.File != "" {
 				fixesByFile[r.File] = append(fixesByFile[r.File], lint.Results{r})
 			}

@@ -126,6 +126,194 @@ func FontDisplay(filePath, level string) []Result {
 	return out
 }
 
+// MissingImageDimensions flags <img> tags without width and height attributes.
+func MissingImageDimensions(filePath, level string) []Result {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil
+	}
+	s := string(b)
+	imgTag := regexp.MustCompile(`(?is)<img\b[^>]*>`)
+	widthAttr := regexp.MustCompile(`\bwidth\s*=\s*"?\d+`)
+	heightAttr := regexp.MustCompile(`\bheight\s*=\s*"?\d+`)
+	var out []Result
+	for _, match := range imgTag.FindAllString(s, -1) {
+		hasWidth := widthAttr.MatchString(match)
+		hasHeight := heightAttr.MatchString(match)
+		if !hasWidth || !hasHeight {
+			var reasons []string
+			if !hasWidth {
+				reasons = append(reasons, "width")
+			}
+			if !hasHeight {
+				reasons = append(reasons, "height")
+			}
+			out = append(out, Result{
+				RuleID: "missing-image-dimensions",
+				Level:  level,
+				File:   filePath,
+				Detail: "<img> missing " + strings.Join(reasons, " and ") + " attribute(s) in " + filePath,
+			})
+		}
+	}
+	return out
+}
+
+// RenderBlockingResources flags CSS/JS in <head> without defer/async or preload.
+func RenderBlockingResources(filePath, level string) []Result {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil
+	}
+	s := string(b)
+	var out []Result
+
+	// Find <head> section
+	headMatch := regexp.MustCompile(`(?is)<head[^>]*>(.*?)</head>`)
+	headContent := headMatch.FindStringSubmatch(s)
+	if len(headContent) < 2 {
+		return nil
+	}
+	head := headContent[1]
+
+	// Check <script> tags without defer/async
+	scriptTag := regexp.MustCompile(`(?is)<script\b([^>]*)>`)
+	hasDeferAsync := regexp.MustCompile(`\b(defer|async)\b`)
+	scripts := scriptTag.FindAllStringSubmatch(head, -1)
+	for _, match := range scripts {
+		if len(match) >= 2 && !hasDeferAsync.MatchString(match[1]) {
+			// Skip if it's a module or has type="module" (modules are defer by default)
+			if !regexp.MustCompile(`\btype\s*=\s*"?module"?`).MatchString(match[1]) {
+				out = append(out, Result{
+					RuleID: "render-blocking-resources",
+					Level:  level,
+					File:   filePath,
+					Detail: "<script> in <head> without defer/async in " + filePath,
+				})
+			}
+		}
+	}
+
+	// Check <link rel="stylesheet"> without preload or media="print"
+	linkTag := regexp.MustCompile(`(?is)<link\b([^>]*(?:rel\s*=\s*"?stylesheet"?)[^>]*)>`)
+	hasPreload := regexp.MustCompile(`\brel\s*=\s*"?preload"?`)
+	hasMediaPrint := regexp.MustCompile(`\bmedia\s*=\s*"?print"?`)
+	links := linkTag.FindAllStringSubmatch(head, -1)
+	for _, match := range links {
+		if len(match) >= 2 {
+			tag := match[1]
+			// Only flag if it's a stylesheet without preload and not media="print"
+			if !hasPreload.MatchString(tag) && !hasMediaPrint.MatchString(tag) {
+				out = append(out, Result{
+					RuleID: "render-blocking-resources",
+					Level:  level,
+					File:   filePath,
+					Detail: "<link rel=\"stylesheet\"> in <head> is render-blocking in " + filePath,
+				})
+			}
+		}
+	}
+
+	return out
+}
+
+// MissingPreconnect flags external domains without preconnect/prefetch links.
+func MissingPreconnect(filePath, level string) []Result {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil
+	}
+	s := string(b)
+	var out []Result
+
+	// Find all external URLs (http://, https://)
+	externalURL := regexp.MustCompile(`(?:href|src|action)\s*=\s*"?(https?://[^"'>\s]+)`)
+	urls := externalURL.FindAllStringSubmatch(s, -1)
+	domains := make(map[string]bool)
+
+	// Extract domains from URLs
+	for _, match := range urls {
+		if len(match) >= 2 {
+			url := match[1]
+			// Extract domain (simple extraction, assumes standard format)
+			domainMatch := regexp.MustCompile(`https?://([^/]+)`)
+			if dm := domainMatch.FindStringSubmatch(url); len(dm) >= 2 {
+				domain := dm[1]
+				// Skip localhost and relative domains
+				if !strings.Contains(domain, "localhost") && !strings.HasPrefix(domain, ".") {
+					domains[domain] = true
+				}
+			}
+		}
+	}
+
+	// Check for preconnect/prefetch links in head
+	headMatch := regexp.MustCompile(`(?is)<head[^>]*>(.*?)</head>`)
+	headContent := headMatch.FindStringSubmatch(s)
+	if len(headContent) < 2 {
+		return nil
+	}
+	head := headContent[1]
+
+	preconnectLink := regexp.MustCompile(`(?is)<link[^>]*rel\s*=\s*"?preconnect"?[^>]*href\s*=\s*"?https?://([^"'>\s]+)`)
+	dnsPrefetchLink := regexp.MustCompile(`(?is)<link[^>]*rel\s*=\s*"?dns-prefetch"?[^>]*href\s*=\s*"?https?://([^"'>\s]+)`)
+
+	preconnectedDomains := make(map[string]bool)
+	for _, match := range preconnectLink.FindAllStringSubmatch(head, -1) {
+		if len(match) >= 2 {
+			domainMatch := regexp.MustCompile(`https?://([^/]+)`)
+			if dm := domainMatch.FindStringSubmatch(match[1]); len(dm) >= 2 {
+				preconnectedDomains[dm[1]] = true
+			}
+		}
+	}
+	for _, match := range dnsPrefetchLink.FindAllStringSubmatch(head, -1) {
+		if len(match) >= 2 {
+			domainMatch := regexp.MustCompile(`https?://([^/]+)`)
+			if dm := domainMatch.FindStringSubmatch(match[1]); len(dm) >= 2 {
+				preconnectedDomains[dm[1]] = true
+			}
+		}
+	}
+
+	// Flag domains without preconnect
+	for domain := range domains {
+		if !preconnectedDomains[domain] {
+			out = append(out, Result{
+				RuleID: "missing-preconnect",
+				Level:  level,
+				File:   filePath,
+				Detail: "External domain " + domain + " used without preconnect/dns-prefetch in " + filePath,
+			})
+		}
+	}
+
+	return out
+}
+
+// MissingAltText flags <img> tags without alt attribute.
+func MissingAltText(filePath, level string) []Result {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil
+	}
+	s := string(b)
+	imgTag := regexp.MustCompile(`(?is)<img\b[^>]*>`)
+	altAttr := regexp.MustCompile(`\balt\s*=`)
+	var out []Result
+	for _, match := range imgTag.FindAllString(s, -1) {
+		if !altAttr.MatchString(match) {
+			out = append(out, Result{
+				RuleID: "missing-alt-text",
+				Level:  level,
+				File:   filePath,
+				Detail: "<img> missing alt attribute in " + filePath,
+			})
+		}
+	}
+	return out
+}
+
 // Helpers
 func parseSize(s string) int {
 	if s == "" {
