@@ -36,35 +36,51 @@ jobs:
       - name: Ensure .tracelet dir
         run: mkdir -p .tracelet
 
+      - name: Check for config file
+        id: check_config
+        run: |
+          if [ -f "tracelet.config.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Compare against baseline and generate markdown
         id: compare
+        if: steps.check_config.outputs.exists == 'true'
         run: |
           set -e
           ./tracelet ci --compare .tracelet/baseline.json --format markdown > report.md || true
           echo "generated=1" >> $GITHUB_OUTPUT
 
       - name: Upload report artifact
+        if: steps.check_config.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: tracelet-report
           path: report.md
+          if-no-files-found: ignore
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check_config.outputs.exists == 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('report.md', 'utf8');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body
-            });
+            if (fs.existsSync('report.md')) {
+              const body = fs.readFileSync('report.md', 'utf8');
+              if (body.trim()) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body
+                });
+              }
+            }
 
       - name: Update baseline on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_config.outputs.exists == 'true'
         run: |
           ./tracelet ci --write-baseline .tracelet/baseline.json
           echo "Baseline updated. Commit this file to persist changes."
