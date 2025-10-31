@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "path": "/", "jsGzipBytes": 16384 },
+    { "path": "/about", "jsGzipBytes": 8192 }
+  ]
+}
+

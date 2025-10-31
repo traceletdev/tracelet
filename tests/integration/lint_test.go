@@ -43,7 +43,13 @@ func TestViteBasic_LintOverBudget(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 	t.Cleanup(func() { _ = os.Chdir(cwd) })
-	cfg, err := config.Load("tracelet.config.json")
+	// Verify we're in the right directory
+	actualCwd, _ := os.Getwd()
+	configPath := filepath.Join(actualCwd, "tracelet.config.json")
+	if _, err := os.Stat(configPath); err != nil {
+		t.Fatalf("config file not found at %s (cwd: %s): %v", configPath, actualCwd, err)
+	}
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}

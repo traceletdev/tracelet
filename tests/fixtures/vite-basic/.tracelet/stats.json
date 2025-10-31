@@ -1,0 +1,6 @@
+{
+  "routes": [
+    { "path": "/", "jsGzipBytes": 14000 },
+    { "path": "/contact", "jsGzipBytes": 4000 }
+  ]
+}

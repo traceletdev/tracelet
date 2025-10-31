@@ -29,6 +29,9 @@ yarn-error.log*
 # Tracelet specific
 .tracelet/
 tracelet.config.json
+# Exception: allow test fixture files
+!tests/fixtures/**/tracelet.config.json
+!tests/fixtures/**/.tracelet/stats.json
 *.tracelet.json
 
 # Build artifacts
