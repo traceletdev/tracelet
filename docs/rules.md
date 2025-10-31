@@ -229,7 +229,10 @@ For strict performance requirements:
     "missing-image-dimensions": "error",
     "render-blocking-resources": "error",
     "missing-preconnect": "warn",
-    "missing-alt-text": "warn"
+    "missing-alt-text": "warn",
+    "react-inline-props": "warn",
+    "react-missing-memo": "info",
+    "react-unstable-props": "warn"
   }
 }
 ```
@@ -245,7 +248,10 @@ For development/learning:
     "missing-image-dimensions": "info",
     "render-blocking-resources": "info",
     "missing-preconnect": "off",
-    "missing-alt-text": "info"
+    "missing-alt-text": "info",
+    "react-inline-props": "info",
+    "react-missing-memo": "off",
+    "react-unstable-props": "info"
   }
 }
 ```
@@ -299,6 +305,112 @@ tracelet lint --ci
 # Normal mode: exit 0 even with warnings
 tracelet lint
 ```
+
+### `react-inline-props`
+
+Flags inline function/object literals in JSX props that can cause unnecessary rerenders.
+
+**Default Severity:** `warn`
+
+**What it checks:**
+- Inline arrow functions in props: `<Component onClick={() => {}} />`
+- Inline object literals in props: `<Component style={{ color: 'red' }} />`
+
+**Example violations:**
+```tsx
+// Inline arrow function
+<Button onClick={() => handleClick(id)} />
+
+// Inline object literal
+<Component data={{ key: value }} />
+```
+
+**Recommended fixes:**
+```tsx
+// Use useCallback for functions
+const handleClick = useCallback(() => {
+  handleClickInternal(id);
+}, [id]);
+
+// Move objects outside render or use useMemo
+const data = useMemo(() => ({ key: value }), [value]);
+```
+
+**Best Practices:**
+- Use `useCallback` for event handlers passed as props
+- Use `useMemo` for objects/arrays passed as props
+- Move static objects outside the component render
+
+### `react-missing-memo`
+
+Flags components that receive props but aren't memoized with `React.memo`.
+
+**Default Severity:** `info`
+
+**What it checks:**
+- Components that receive props but aren't wrapped with `React.memo`
+- Only flags components that actually receive props
+
+**Example violation:**
+```tsx
+// Component receives props but isn't memoized
+function ProductCard({ title, price }) {
+  return <div>{title} - ${price}</div>;
+}
+```
+
+**Recommended fix:**
+```tsx
+// Wrap with React.memo to prevent unnecessary rerenders
+const ProductCard = React.memo(function ProductCard({ title, price }) {
+  return <div>{title} - ${price}</div>;
+});
+```
+
+**Best Practices:**
+- Use `React.memo` for components that render frequently
+- Only memoize if props change infrequently
+- Don't memoize components that receive new props on every render
+
+### `react-unstable-props`
+
+Flags unstable props (inline functions/objects) passed from parent components that cause child rerenders.
+
+**Default Severity:** `warn`
+
+**What it checks:**
+- Parent components passing inline functions to children
+- Parent components passing inline objects to children
+
+**Example violation:**
+```tsx
+function Parent() {
+  return (
+    <Child
+      onClick={() => handleClick()}  // Inline function
+      data={{ key: 'value' }}        // Inline object
+    />
+  );
+}
+```
+
+**Recommended fix:**
+```tsx
+function Parent() {
+  const handleClick = useCallback(() => {
+    handleClickInternal();
+  }, []);
+
+  const data = useMemo(() => ({ key: 'value' }), []);
+
+  return <Child onClick={handleClick} data={data} />;
+}
+```
+
+**Best Practices:**
+- Move event handlers to `useCallback` in parent components
+- Move objects/arrays to `useMemo` in parent components
+- This prevents child components from rerendering when parent rerenders
 
 ## Future Rules
 

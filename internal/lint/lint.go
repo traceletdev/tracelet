@@ -141,6 +141,57 @@ func Run(req Request) (Results, stats.Stats) {
 		}
 	}
 
+	// react-inline-props
+	if lvl := req.Config.Rules["react-inline-props"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.ReactInlineProps(file, lvl)...)
+			}
+		}
+	}
+
+	// react-missing-memo
+	if lvl := req.Config.Rules["react-missing-memo"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.ReactMissingMemo(file, lvl)...)
+			}
+		}
+	}
+
+	// react-unstable-props
+	if lvl := req.Config.Rules["react-unstable-props"]; lvl != "off" {
+		filesToCheck := []string{}
+		if req.File != "" {
+			filesToCheck = []string{req.File}
+		} else if req.Scope == "changed" {
+			filesToCheck = getChangedFiles([]string{".tsx", ".jsx"})
+		} else if req.Scope == "all" {
+			filesToCheck = findFiles([]string{".tsx", ".jsx"})
+		}
+		for _, file := range filesToCheck {
+			if strings.HasSuffix(strings.ToLower(file), ".tsx") || strings.HasSuffix(strings.ToLower(file), ".jsx") {
+				res = append(res, rules.ReactUnstableProps(file, lvl)...)
+			}
+		}
+	}
+
 	// Normalize levels based on config where needed
 	for i := range res {
 		if res[i].Level == "" {
