@@ -307,8 +307,27 @@ function getBinaryPath() {
     }
     // Try common locations
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    // Platform-specific binary paths in node_modules
+    const platform = process.platform;
+    const arch = process.arch;
+    let binaryDir = '';
+    if (platform === 'darwin') {
+        binaryDir = arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64';
+    }
+    else if (platform === 'linux') {
+        binaryDir = arch === 'arm64' ? 'linux-arm64' : 'linux-x64';
+    }
+    else if (platform === 'win32') {
+        binaryDir = arch === 'arm64' ? 'win32-arm64' : 'win32-x64';
+    }
+    const binaryName = platform === 'win32' ? 'tracelet.exe' : 'tracelet';
     // Common tracelet repo locations (if user built it from source)
+    // Also check node_modules for npm-installed tracelet
     const possiblePaths = [
+        // Check node_modules first (npm-installed)
+        workspaceRoot ? path.join(workspaceRoot, 'node_modules', '.bin', 'tracelet') : null,
+        workspaceRoot && binaryDir ? path.join(workspaceRoot, 'node_modules', 'tracelet', 'binaries', binaryDir, binaryName) : null,
+        // Local repo builds
         workspaceRoot ? path.join(workspaceRoot, 'tracelet') : null,
         workspaceRoot ? path.join(workspaceRoot, '..', 'tracelet', 'tracelet') : null,
         workspaceRoot ? path.join(workspaceRoot, '..', '..', 'tracelet', 'tracelet') : null,
@@ -317,6 +336,9 @@ function getBinaryPath() {
         // Also try in common dev locations
         path.join(os.homedir(), 'Documents', 'tracelet', 'tracelet'),
         path.join(os.homedir(), 'go', 'bin', 'tracelet'),
+        // Global npm install
+        path.join(os.homedir(), '.npm-global', 'bin', 'tracelet'),
+        // Try npx (will be handled by PATH)
         'tracelet'
     ].filter((p) => p !== null);
     for (const p of possiblePaths) {
