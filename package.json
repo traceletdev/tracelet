@@ -1,0 +1,49 @@
+{
+  "name": "tracelet",
+  "version": "0.5.0",
+  "description": "Performance toolkit that brings Lighthouse-level insight and ESLint-level ergonomics",
+  "type": "commonjs",
+  "main": "bin/tracelet.js",
+  "bin": {
+    "tracelet": "./bin/tracelet.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "build:bin": "echo 'Run: goreleaser release --snapshot to build binaries, or use go build'",
+    "pack:bin": "node scripts/pack-binaries.js",
+    "prepare:publish": "npm run pack:bin && npm run test:packages",
+    "test:packages": "echo 'Package structure tests would go here'",
+    "publish:all": "node scripts/publish-all.js",
+    "publish:dry": "node scripts/publish-all.js --dry-run"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "keywords": [
+    "performance",
+    "budgets",
+    "linting",
+    "monitoring",
+    "nextjs",
+    "vite",
+    "web-vitals"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/traceletdev/tracelet.git"
+  },
+  "files": [
+    "bin/",
+    "binaries/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ]
+}
+

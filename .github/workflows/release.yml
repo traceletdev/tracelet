@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pack binaries for npm
+        run: npm run pack:bin
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package versions
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = '${{ steps.version.outputs.version }}';
+            const packages = [
+              { path: './package.json' },
+              { path: './packages/tracelet-next/package.json' },
+              { path: './packages/tracelet-vite/package.json' }
+            ];
+            packages.forEach(({ path }) => {
+              if (fs.existsSync(path)) {
+                const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+                pkg.version = version;
+                fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+              }
+            });
+          "
+
+      - name: Publish to npm
+        run: |
+          cd packages/tracelet-next && npm publish --access public
+          cd ../tracelet-vite && npm publish --access public
+          cd ../.. && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -1,0 +1,65 @@
+{
+  "name": "tracelet",
+  "displayName": "Tracelet",
+  "description": "Performance linting and diagnostics for your routes",
+  "version": "0.5.0",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Linters", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tracelet.lintChanged",
+        "title": "Tracelet: Lint Changed"
+      },
+      {
+        "command": "tracelet.probeCurrentRoute",
+        "title": "Tracelet: Probe Current Route"
+      },
+      {
+        "command": "tracelet.openConfig",
+        "title": "Tracelet: Open Config"
+      }
+    ],
+    "configuration": {
+      "title": "Tracelet",
+      "properties": {
+        "tracelet.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to tracelet binary (leave empty to auto-detect)"
+        },
+        "tracelet.debounceMs": {
+          "type": "number",
+          "default": 600,
+          "description": "Debounce delay in milliseconds for lint on save"
+        },
+        "tracelet.enableOnType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable linting on type (may be slow)"
+        },
+        "tracelet.probe.profile": {
+          "type": "string",
+          "enum": ["desktop", "mobile"],
+          "default": "desktop",
+          "description": "Profile to use for probe command"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
+}

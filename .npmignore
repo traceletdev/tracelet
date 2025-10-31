@@ -1,0 +1,59 @@
+# Go source files
+*.go
+go.mod
+go.sum
+cmd/
+internal/
+*.test.go
+
+# Build artifacts
+tracelet
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+tests/
+testdata/
+*.test.js
+
+# Documentation (keep README and LICENSE)
+docs/
+CONTRIBUTING.md
+Tracelet-Planning.md
+*.md
+!README.md
+!LICENSE
+!packages/*/README.md
+
+# CI/CD
+.github/
+
+# VS Code extension (separate package)
+ui/
+
+# Old adapter files (migrated to packages/)
+adapters/
+
+# Config and stats (user-specific)
+tracelet.config.json
+.tracelet/
+
+# Node modules
+node_modules/
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
+

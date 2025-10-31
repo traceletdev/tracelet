@@ -1,0 +1,42 @@
+project_name: tracelet
+
+# Build configuration
+builds:
+  - id: tracelet
+    main: ./cmd/tracelet
+    binary: tracelet
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+# Snapshot configuration
+snapshots:
+  name_template: "{{ .Tag }}-next"
+
+# Archive configuration for GitHub releases
+archives:
+  - id: default
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - LICENSE
+      - README.md
+
+# Changelog
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
+

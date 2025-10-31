@@ -1,0 +1,49 @@
+# Binaries
+tracelet
+*.exe
+*.dll
+*.so
+*.dylib
+dist/
+binaries/
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnp/
+
+# Go build artifacts
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Tracelet specific
+.tracelet/
+tracelet.config.json
+*.tracelet.json
+
+# Build artifacts
+*.wasm
+*.map
+
+# Logs
+*.log
+
+# Test coverage
+coverage/
+*.coverprofile
+
+# Temporary files
+tmp/
+temp/
+

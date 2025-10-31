@@ -1,0 +1,33 @@
+{
+  "name": "tracelet-next",
+  "version": "0.5.0",
+  "description": "Tracelet plugin for Next.js - automatically collects route statistics after builds",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node collect.js"
+  },
+  "peerDependencies": {
+    "tracelet": "^0.5.0",
+    "next": ">=13.0.0"
+  },
+  "keywords": [
+    "tracelet",
+    "nextjs",
+    "performance",
+    "plugin"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/traceletdev/tracelet.git",
+    "directory": "packages/tracelet-next"
+  },
+  "files": [
+    "index.js",
+    "collect.js",
+    "README.md"
+  ]
+}
+
