@@ -15,10 +15,6 @@ builds:
     env:
       - CGO_ENABLED=0
 
-# Snapshot configuration
-snapshots:
-  name_template: "{{ .Tag }}-next"
-
 # Archive configuration for GitHub releases
 archives:
   - id: default
