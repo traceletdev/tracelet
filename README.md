@@ -179,7 +179,8 @@ For projects not using npm packages, see adapter files in `adapters/` directory:
 
 ## Examples
 
-Check `tests/fixtures/` for example Next.js and Vite projects.
+See [`examples/`](./examples) — drop-in [config examples](./examples/config-examples)
+(basic, strict, CI) and pointers to the runnable Next.js/Vite fixture apps.
 
 ## Development
 
@@ -220,7 +221,9 @@ MIT
 
 ## Contributing
 
-Contributions welcome! See `CONTRIBUTING.md` for guidelines.
+Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines and
+our [Code of Conduct](./CODE_OF_CONDUCT.md). Release history is in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ---
 

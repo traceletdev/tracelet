@@ -79,7 +79,7 @@ function activate(context) {
     const config = vscode.workspace.getConfiguration('tracelet');
     const debounceMs = config.get('debounceMs', 600);
     // Lint on save
-    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((doc) => {
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
         if (debounceTimer) {
             clearTimeout(debounceTimer);
         }
@@ -89,7 +89,7 @@ function activate(context) {
     }));
     // Lint on type (if enabled)
     if (config.get('enableOnType', false)) {
-        context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((e) => {
+        context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(e => {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
             }
@@ -100,7 +100,7 @@ function activate(context) {
     }
     // Code action provider for quick fixes
     context.subscriptions.push(vscode.languages.registerCodeActionsProvider({ scheme: 'file', pattern: '**/*.{html,tsx,jsx,css,scss}' }, new TraceletCodeActionProvider(), {
-        providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+        providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
     }));
     // Commands
     context.subscriptions.push(vscode.commands.registerCommand('tracelet.lintChanged', () => {
@@ -112,7 +112,7 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('tracelet.probeCurrentRoute', async () => {
         const url = await vscode.window.showInputBox({
             prompt: 'Enter URL to probe (e.g., http://localhost:3000)',
-            placeHolder: 'http://localhost:3000'
+            placeHolder: 'http://localhost:3000',
         });
         if (url) {
             probeRoute(url);
@@ -131,7 +131,7 @@ function activate(context) {
     // Initial lint if workspace is available
     if (vscode.workspace.workspaceFolders) {
         setTimeout(() => {
-            vscode.workspace.textDocuments.forEach((doc) => {
+            vscode.workspace.textDocuments.forEach(doc => {
                 if (isRelevantFile(doc)) {
                     lintDocument(doc);
                 }
@@ -163,7 +163,7 @@ async function lintDocument(doc) {
             encoding: 'utf8',
             cwd: path.dirname(configPath),
             maxBuffer: 10 * 1024 * 1024,
-            stdio: 'pipe'
+            stdio: 'pipe',
         });
         const stdout = result.stdout || '';
         const stderr = result.stderr || '';
@@ -197,8 +197,9 @@ async function lintDocument(doc) {
     }
     catch (e) {
         // Log errors for debugging
-        const errMsg = e.message || String(e);
-        const stderr = e.stderr ? e.stderr.toString() : '';
+        const err = e;
+        const errMsg = err.message || String(e);
+        const stderr = err.stderr ? err.stderr.toString() : '';
         console.log('[tracelet] lint error:', errMsg);
         if (stderr) {
             console.log('[tracelet] stderr:', stderr);
@@ -215,9 +216,11 @@ function updateDiagnostics(doc, results) {
     for (const r of results) {
         if (!r.ruleId || !r.detail)
             continue;
-        const severity = r.level === 'error' ? vscode.DiagnosticSeverity.Error :
-            r.level === 'warn' ? vscode.DiagnosticSeverity.Warning :
-                vscode.DiagnosticSeverity.Information;
+        const severity = r.level === 'error'
+            ? vscode.DiagnosticSeverity.Error
+            : r.level === 'warn'
+                ? vscode.DiagnosticSeverity.Warning
+                : vscode.DiagnosticSeverity.Information;
         // Find line number - try multiple strategies
         let line = 0;
         const lineMatch = r.detail.match(/line (\d+)/i);
@@ -258,7 +261,9 @@ function updateStatusBar(stats) {
         return;
     }
     let totalBytes = 0;
-    let overCount = 0;
+    // ponytail: always 0 today — the status bar never surfaces an over-budget
+    // count; wire this to real budget comparison if/when the extension loads config.
+    const overCount = 0;
     for (const r of stats.routes) {
         totalBytes += r.jsGzipBytes || 0;
     }
@@ -282,11 +287,11 @@ async function probeRoute(url) {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Probing route...',
-            cancellable: false
+            cancellable: false,
         }, async () => {
             const result = cp.execFileSync(binary, ['probe', url, '--profile', profile, '--format', 'json'], {
                 encoding: 'utf8',
-                maxBuffer: 10 * 1024 * 1024
+                maxBuffer: 10 * 1024 * 1024,
             });
             const data = JSON.parse(result);
             const m = data.metrics || {};
@@ -295,7 +300,8 @@ async function probeRoute(url) {
         });
     }
     catch (e) {
-        vscode.window.showErrorMessage(`Probe failed: ${e.message}`);
+        const err = e;
+        vscode.window.showErrorMessage(`Probe failed: ${err.message ?? String(e)}`);
     }
 }
 function getBinaryPath() {
@@ -326,7 +332,9 @@ function getBinaryPath() {
     const possiblePaths = [
         // Check node_modules first (npm-installed)
         workspaceRoot ? path.join(workspaceRoot, 'node_modules', '.bin', 'tracelet') : null,
-        workspaceRoot && binaryDir ? path.join(workspaceRoot, 'node_modules', 'tracelet', 'binaries', binaryDir, binaryName) : null,
+        workspaceRoot && binaryDir
+            ? path.join(workspaceRoot, 'node_modules', 'tracelet', 'binaries', binaryDir, binaryName)
+            : null,
         // Local repo builds
         workspaceRoot ? path.join(workspaceRoot, 'tracelet') : null,
         workspaceRoot ? path.join(workspaceRoot, '..', 'tracelet', 'tracelet') : null,
@@ -339,14 +347,18 @@ function getBinaryPath() {
         // Global npm install
         path.join(os.homedir(), '.npm-global', 'bin', 'tracelet'),
         // Try npx (will be handled by PATH)
-        'tracelet'
+        'tracelet',
     ].filter((p) => p !== null);
     for (const p of possiblePaths) {
         try {
             if (fs.existsSync(p) && fs.statSync(p).isFile()) {
                 // Try to execute it to verify it's a valid binary
                 try {
-                    cp.execFileSync(p, ['lint', '--help'], { encoding: 'utf8', stdio: 'pipe', timeout: 1000 });
+                    cp.execFileSync(p, ['lint', '--help'], {
+                        encoding: 'utf8',
+                        stdio: 'pipe',
+                        timeout: 1000,
+                    });
                 }
                 catch {
                     // Help might fail, but if file exists and is executable, that's fine

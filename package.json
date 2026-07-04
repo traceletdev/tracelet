@@ -14,10 +14,25 @@
     "prepare:publish": "npm run pack:bin && npm run test:packages",
     "test:packages": "echo 'Package structure tests would go here'",
     "publish:all": "node scripts/publish-all.js",
-    "publish:dry": "node scripts/publish-all.js --dry-run"
+    "publish:dry": "node scripts/publish-all.js --dry-run",
+    "format": "prettier --write \"{adapters,packages,scripts,examples}/**/*.{js,cjs,mjs,json}\" \"ui/vscode-extension/src/**/*.ts\" \"*.json\"",
+    "format:check": "prettier --check \"{adapters,packages,scripts,examples}/**/*.{js,cjs,mjs,json}\" \"ui/vscode-extension/src/**/*.ts\" \"*.json\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.62.1"
   },
   "workspaces": [
     "packages/*"

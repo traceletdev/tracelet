@@ -39,9 +39,14 @@ function sumFiles(projectRoot, relPaths) {
     // - main-app-*.js (Next.js app router)
     // - webpack-*.js (webpack runtime)
     // - Chunks with hash patterns often contain vendor code
-    if (rel.includes('/node_modules/') || rel.includes('/webpack/') ||
-        rel.match(/^static\/chunks\/framework/) || rel.match(/^static\/chunks\/main-app/) ||
-        rel.match(/^static\/chunks\/webpack/) || rel.match(/^static\/chunks\/[0-9a-f]{16}\.js$/)) {
+    if (
+      rel.includes('/node_modules/') ||
+      rel.includes('/webpack/') ||
+      rel.match(/^static\/chunks\/framework/) ||
+      rel.match(/^static\/chunks\/main-app/) ||
+      rel.match(/^static\/chunks\/webpack/) ||
+      rel.match(/^static\/chunks\/[0-9a-f]{16}\.js$/)
+    ) {
       thirdParty += size;
     }
   }
@@ -49,10 +54,18 @@ function sumFiles(projectRoot, relPaths) {
 }
 
 function collectRoutes(projectRoot) {
-  const buildManifest = readJSON(path.join(projectRoot, '.next', 'build-manifest.json')) || { pages: {} };
-  const prerenderManifest = readJSON(path.join(projectRoot, '.next', 'prerender-manifest.json')) || { routes: {} };
-  const appBuild = readJSON(path.join(projectRoot, '.next', 'app-build-manifest.json')) || { pages: {}, rootMainFiles: [] };
-  const appPathRoutes = readJSON(path.join(projectRoot, '.next', 'app-path-routes-manifest.json')) || {};
+  const buildManifest = readJSON(path.join(projectRoot, '.next', 'build-manifest.json')) || {
+    pages: {},
+  };
+  const prerenderManifest = readJSON(
+    path.join(projectRoot, '.next', 'prerender-manifest.json')
+  ) || { routes: {} };
+  const appBuild = readJSON(path.join(projectRoot, '.next', 'app-build-manifest.json')) || {
+    pages: {},
+    rootMainFiles: [],
+  };
+  const appPathRoutes =
+    readJSON(path.join(projectRoot, '.next', 'app-path-routes-manifest.json')) || {};
 
   const pages = buildManifest.pages || {};
   const appPages = appBuild.pages || {};
@@ -70,7 +83,7 @@ function collectRoutes(projectRoot) {
     if (!k.endsWith('/page')) return null;
     let r = k.replace(/\/page$/, '') || '/';
     // Drop segment groups like '(routes)'
-    r = r.replace(/\([^\)]+\)\//g, '/');
+    r = r.replace(/\([^)]+\)\//g, '/');
     return r;
   }
 
@@ -112,9 +125,17 @@ function collectRoutes(projectRoot) {
   function loadNestedManifest(manifestKey) {
     // Convert manifest key like "/(routes)/[locale]/money2020/page" to file path
     const relPath = manifestKey.replace(/^\/|\/page$/g, '');
-    const manifestPath = path.join(projectRoot, '.next', 'server', 'app', relPath, 'page', 'app-build-manifest.json');
+    const manifestPath = path.join(
+      projectRoot,
+      '.next',
+      'server',
+      'app',
+      relPath,
+      'page',
+      'app-build-manifest.json'
+    );
     const nested = readJSON(manifestPath);
-    return nested ? (nested.pages || {}) : null;
+    return nested ? nested.pages || {} : null;
   }
 
   // App Router pages - collect both concrete routes and dynamic patterns
@@ -176,8 +197,8 @@ function collectRoutes(projectRoot) {
     if (isInternal(key)) continue;
     let r = cleanRoute(key);
     if (isAssetRoute(r)) continue;
-    const files = (pages[key] || []);
-    const runtime = (buildManifest.runtime || []);
+    const files = pages[key] || [];
+    const runtime = buildManifest.runtime || [];
     if (isDynamicRoute(r)) {
       dynamicPatternToFiles.set(r, files.concat(runtime));
     } else {
@@ -243,7 +264,7 @@ function collectRoutes(projectRoot) {
     routes.push({
       path: route,
       jsGzipBytes: total,
-      thirdPartyJsBytes: thirdParty
+      thirdPartyJsBytes: thirdParty,
     });
   }
   return routes;
@@ -264,5 +285,3 @@ if (require.main === module) {
 
 // Export for programmatic use
 module.exports = main;
-
-

@@ -81,7 +81,7 @@ func UnoptimizedImage(filePath, level string) []Result {
 	var out []Result
 	tags := imgTag.FindAllString(s, -1)
 	for _, t := range tags {
-		missingWH := !(widthAttr.MatchString(t) && heightAttr.MatchString(t))
+		missingWH := !widthAttr.MatchString(t) || !heightAttr.MatchString(t)
 		missingLazy := !loadingLazy.MatchString(t)
 		if missingWH || missingLazy {
 			var reasons []string

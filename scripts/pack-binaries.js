@@ -35,17 +35,17 @@ const binariesDir = path.join(__dirname, '..', 'binaries');
 
 // Map from GoReleaser naming to npm naming
 const platformMap = {
-  'darwin': {
-    'amd64': { dir: 'darwin-x64', name: 'tracelet' },
-    'arm64': { dir: 'darwin-arm64', name: 'tracelet' },
+  darwin: {
+    amd64: { dir: 'darwin-x64', name: 'tracelet' },
+    arm64: { dir: 'darwin-arm64', name: 'tracelet' },
   },
-  'linux': {
-    'amd64': { dir: 'linux-x64', name: 'tracelet' },
-    'arm64': { dir: 'linux-arm64', name: 'tracelet' },
+  linux: {
+    amd64: { dir: 'linux-x64', name: 'tracelet' },
+    arm64: { dir: 'linux-arm64', name: 'tracelet' },
   },
-  'windows': {
-    'amd64': { dir: 'win32-x64', name: 'tracelet.exe' },
-    'arm64': { dir: 'win32-arm64', name: 'tracelet.exe' },
+  windows: {
+    amd64: { dir: 'win32-x64', name: 'tracelet.exe' },
+    arm64: { dir: 'win32-arm64', name: 'tracelet.exe' },
   },
 };
 
@@ -130,4 +130,3 @@ if (require.main === module) {
 }
 
 module.exports = packBinaries;
-
