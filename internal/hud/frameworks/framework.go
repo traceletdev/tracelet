@@ -5,10 +5,15 @@ import _ "embed"
 //go:embed react.js
 var reactInstrumentationJS string
 
-// Component represents a React/component framework component with render tracking
+// Component represents a React/component framework component with render tracking.
+// Counts are aggregated by display name: RenderCount is the total across all
+// instances, Instances is how many instances share the name, and MaxRenders is
+// the hottest single instance (the signal that matters for re-render smells).
 type Component struct {
 	Name        string                 `json:"name"`
 	RenderCount int                    `json:"renderCount"`
+	Instances   int                    `json:"instances,omitempty"`
+	MaxRenders  int                    `json:"maxRenders,omitempty"`
 	Props       map[string]interface{} `json:"props,omitempty"`
 	Children    []*Component           `json:"children,omitempty"`
 }

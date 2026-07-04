@@ -127,6 +127,12 @@ func Start(port int, cfgPath string) error {
 										} else if count, ok := compMap["renderCount"].(int); ok {
 											comp.RenderCount = count
 										}
+										if v, ok := compMap["instances"].(float64); ok {
+											comp.Instances = int(v)
+										}
+										if v, ok := compMap["maxRenders"].(float64); ok {
+											comp.MaxRenders = int(v)
+										}
 										components = append(components, comp)
 									}
 								}
@@ -317,6 +323,22 @@ func overlayJS(port int) string {
       metricsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
       content.appendChild(metricsList);
 
+      // Reset control for the Components tab: zero counts, do one interaction,
+      // see exactly what it re-rendered.
+      var componentsBar = document.createElement('div');
+      componentsBar.id = '__tracelet_components_bar';
+      componentsBar.style.cssText = 'display:none;justify-content:flex-end;margin-bottom:6px;';
+      var resetBtn = document.createElement('button');
+      resetBtn.textContent = '⟲ Reset counts';
+      resetBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#ccc;font-size:10px;padding:4px 8px;border-radius:4px;cursor:pointer;';
+      resetBtn.addEventListener('click', function(){
+        if (window.__traceletReactInstrumentation) window.__traceletReactInstrumentation.reset();
+        if (window.__traceletRefreshMetrics) window.__traceletRefreshMetrics();
+        updateComponentsDisplay([]);
+      });
+      componentsBar.appendChild(resetBtn);
+      content.appendChild(componentsBar);
+
       var componentsList = document.createElement('div');
       componentsList.id = '__tracelet_components';
       componentsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
@@ -328,6 +350,7 @@ func overlayJS(port int) string {
         routesList.style.display = tab === 'routes' ? 'flex' : 'none';
         metricsList.style.display = tab === 'metrics' ? 'flex' : 'none';
         componentsList.style.display = tab === 'components' ? 'flex' : 'none';
+        componentsBar.style.display = tab === 'components' ? 'flex' : 'none';
         routesTab.style.color = tab === 'routes' ? '#fff' : '#888';
         routesTab.style.borderBottomColor = tab === 'routes' ? '#3b82f6' : 'transparent';
         metricsTab.style.color = tab === 'metrics' ? '#fff' : '#888';
@@ -587,6 +610,8 @@ func overlayJS(port int) string {
                   cleanComponents.push({
                     name: comp.name || 'Unknown',
                     renderCount: comp.renderCount || 0,
+                    instances: comp.instances || 0,
+                    maxRenders: comp.maxRenders || 0,
                     depth: comp.depth || 0
                   });
                 }
@@ -657,6 +682,8 @@ func overlayJS(port int) string {
                   cleanComponents.push({
                     name: comp.name || 'Unknown',
                     renderCount: comp.renderCount || 0,
+                    instances: comp.instances || 0,
+                    maxRenders: comp.maxRenders || 0,
                     depth: comp.depth || 0
                   });
                 }
@@ -968,9 +995,11 @@ func overlayJS(port int) string {
           return;
         }
 
-        // Sort by render count (descending) to show most re-rendering components first
+        // Rank by the hottest single instance (maxRenders) — a lone instance
+        // rendering 200x is the real smell; total is inflated by instance count.
+        function maxOf(c){ return c.maxRenders || c.renderCount || 0; }
         var sorted = components.slice().sort(function(a, b){
-          return (b.renderCount || 0) - (a.renderCount || 0);
+          return maxOf(b) - maxOf(a);
         });
 
         sorted.forEach(function(comp){
@@ -978,27 +1007,35 @@ func overlayJS(port int) string {
           el.style.cssText = 'padding:8px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);border-radius:4px;';
 
           var nameRow = document.createElement('div');
-          nameRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';
+          nameRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
 
           var nameEl = document.createElement('span');
           nameEl.style.cssText = 'color:#3b82f6;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;';
           nameEl.textContent = comp.name || 'Unknown';
           nameRow.appendChild(nameEl);
 
+          // Color by max-per-instance, not total.
+          var mx = maxOf(comp);
+          var total = comp.renderCount || 0;
           var countEl = document.createElement('span');
-          var count = comp.renderCount || 0;
-          countEl.style.cssText = 'color:' + (count > 10 ? '#ef4444' : count > 5 ? '#f59e0b' : '#10b981') + ';font-family:ui-monospace,monospace;font-size:11px;font-weight:600;';
-          countEl.textContent = count + ' render' + (count !== 1 ? 's' : '');
+          countEl.style.cssText = 'color:' + (mx > 10 ? '#ef4444' : mx > 5 ? '#f59e0b' : '#10b981') + ';font-family:ui-monospace,monospace;font-size:11px;font-weight:600;';
+          countEl.textContent = total + ' render' + (total !== 1 ? 's' : '');
           nameRow.appendChild(countEl);
-
           el.appendChild(nameRow);
 
-          // Show changed props if available
-          if (comp.changedProps && comp.changedProps.length > 0) {
-            var propsEl = document.createElement('div');
-            propsEl.style.cssText = 'color:#888;font-size:10px;margin-top:4px;';
-            propsEl.textContent = 'Changed props: ' + comp.changedProps.join(', ');
-            el.appendChild(propsEl);
+          // Per-instance breakdown: "N instances · max M" (only when known).
+          var inst = comp.instances || 0;
+          if (inst > 0) {
+            var sub = document.createElement('div');
+            sub.style.cssText = 'display:flex;justify-content:space-between;color:#888;font-size:10px;font-family:ui-monospace,monospace;margin-top:3px;';
+            var left = document.createElement('span');
+            left.textContent = inst + ' instance' + (inst !== 1 ? 's' : '');
+            var right = document.createElement('span');
+            right.style.color = (mx > 10 ? '#ef4444' : mx > 5 ? '#f59e0b' : '#888');
+            right.textContent = 'max ' + mx + '/instance';
+            sub.appendChild(left);
+            sub.appendChild(right);
+            el.appendChild(sub);
           }
 
           componentsEl.appendChild(el);

@@ -29,8 +29,20 @@
     }
   }
 
-  var PerformedWork = 0b1; // React fiber flag set when beginWork ran this commit
-  var renderCounts = {};   // display name -> cumulative render count
+  var idMap = new WeakMap(); // fiber -> instance id (fibers are non-extensible,
+                             // so we can't tag them directly — WeakMap works)
+  var instances = {};      // instance id -> { name, count }
+  var nextId = 1;          // monotonic; never reset (avoids id reuse collisions)
+
+  // Stable per-instance id across the fiber double-buffer: current/alternate
+  // swap each commit, so both halves map to the same id.
+  function instanceId(fiber) {
+    var id = idMap.get(fiber) || (fiber.alternate && idMap.get(fiber.alternate));
+    if (!id) id = nextId++;
+    idMap.set(fiber, id);
+    if (fiber.alternate) idMap.set(fiber.alternate, id);
+    return id;
+  }
 
   function getDisplayName(fiber) {
     var type = fiber.type;
@@ -45,8 +57,13 @@
     return null;
   }
 
-  // Walk the committed fiber tree and count every composite component that
-  // performed work this commit (freshly mounted, or PerformedWork flag set).
+  // We walk the whole current tree each commit, so we must distinguish fibers
+  // that rendered THIS commit from ones just sitting in a bailed-out subtree.
+  // - Updated fibers have an alternate; they rendered iff memoizedProps or
+  //   memoizedState changed vs it (a bailout reuses both references). The
+  //   PerformedWork flag is unreliable — it stays stale on reused fibers.
+  // - Never-updated fibers keep alternate === null forever, so we count their
+  //   mount exactly once (rec.seen) rather than on every walk.
   function onCommit(root) {
     if (!root || !root.current) return;
     var stack = [root.current];
@@ -56,9 +73,15 @@
       if (!fiber) continue;
       var name = getDisplayName(fiber);
       if (name) {
-        var flags = (fiber.flags !== undefined ? fiber.flags : fiber.effectTag) || 0;
-        var rendered = fiber.alternate == null || (flags & PerformedWork) !== 0;
-        if (rendered) renderCounts[name] = (renderCounts[name] || 0) + 1;
+        var id = instanceId(fiber);
+        var rec = instances[id] || (instances[id] = { name: name, count: 0, seen: false });
+        rec.name = name;
+        var alt = fiber.alternate;
+        var rendered = alt == null
+          ? !rec.seen // mount: count once
+          : (alt.memoizedProps !== fiber.memoizedProps || alt.memoizedState !== fiber.memoizedState);
+        if (rendered) rec.count++;
+        rec.seen = true;
       }
       if (fiber.child) stack.push(fiber.child);
       if (fiber.sibling) stack.push(fiber.sibling);
@@ -97,16 +120,39 @@
     log('installed minimal DevTools hook');
   }
 
+  // Aggregate per-instance data by display name, keeping the instance count and
+  // the hottest single instance — so 1 instance rendering 200x (a real smell) is
+  // distinguishable from 40 instances rendering 5x each.
+  function aggregate() {
+    var byName = {};
+    for (var id in instances) {
+      var r = instances[id];
+      if (r.count === 0) continue; // skip instances that haven't rendered (e.g. post-reset)
+      var g = byName[r.name] || (byName[r.name] = { name: r.name, instances: 0, renderCount: 0, maxRenders: 0 });
+      g.instances++;
+      g.renderCount += r.count;
+      if (r.count > g.maxRenders) g.maxRenders = r.count;
+    }
+    return byName;
+  }
+
   window.__traceletReactInstrumentation = {
     getComponents: function () {
+      var byName = aggregate();
       var out = [];
-      for (var name in renderCounts) {
-        out.push({ name: name, renderCount: renderCounts[name] });
-      }
+      for (var n in byName) out.push(byName[n]);
       return out;
     },
-    getRenderCounts: function () { return renderCounts; },
-    reset: function () { renderCounts = {}; }
+    getRenderCounts: function () {
+      var byName = aggregate();
+      var counts = {};
+      for (var n in byName) counts[n] = byName[n].renderCount;
+      return counts;
+    },
+    // Zero counts but keep instance records (and their `seen` flags) so already
+    // mounted components aren't re-counted as fresh mounts — after reset, only
+    // components that actually re-render show up.
+    reset: function () { for (var id in instances) instances[id].count = 0; }
   };
 })();
 
