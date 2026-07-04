@@ -44,17 +44,27 @@
     return id;
   }
 
+  // Drop unhelpful names. React components are PascalCase by convention (a
+  // lowercase tag is a host element), so anything not starting uppercase is
+  // either anonymous or a minified library internal ("oi", "rU", "u7"). Names
+  // with a dot (framer-motion's motion.div / motion.create()) are kept.
+  function isNoise(name) {
+    if (!name || name === 'Anonymous' || name === 'Unknown') return true;
+    return name.indexOf('.') === -1 && !/^[A-Z]/.test(name);
+  }
+
   function getDisplayName(fiber) {
     var type = fiber.type;
-    if (typeof type === 'function') return type.displayName || type.name || null;
-    if (typeof type === 'string') return null; // host component (div/span/...)
-    if (type && typeof type === 'object') {
+    var name = null;
+    if (typeof type === 'function') {
+      name = type.displayName || type.name || null;
+    } else if (type && typeof type === 'object') {
       // React.memo (type.type) or forwardRef (type.render)
-      if (type.displayName) return type.displayName;
       var inner = type.type || type.render;
-      if (typeof inner === 'function') return inner.displayName || inner.name || null;
+      name = type.displayName ||
+        (typeof inner === 'function' ? (inner.displayName || inner.name) : null) || null;
     }
-    return null;
+    return isNoise(name) ? null : name;
   }
 
   // We walk the whole current tree each commit, so we must distinguish fibers
@@ -93,6 +103,17 @@
     try { onCommit(root); } catch (e) { log('commit error', e); }
   }
 
+  // Drop an instance's record when its fiber unmounts, so stale components don't
+  // linger in the list.
+  function onUnmount(fiber) {
+    var id = idMap.get(fiber) || (fiber.alternate && idMap.get(fiber.alternate));
+    if (id && instances[id]) delete instances[id];
+  }
+
+  function safeUnmount(fiber) {
+    try { onUnmount(fiber); } catch (e) { log('unmount error', e); }
+  }
+
   // Install (or wrap) the DevTools global hook.
   var existing = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (existing) {
@@ -103,6 +124,11 @@
       safeCommit(root);
       if (typeof origOnCommit === 'function') return origOnCommit.apply(this, arguments);
     };
+    var origUnmount = existing.onCommitFiberUnmount;
+    existing.onCommitFiberUnmount = function (id, fiber) {
+      safeUnmount(fiber);
+      if (typeof origUnmount === 'function') return origUnmount.apply(this, arguments);
+    };
     log('wrapped existing DevTools hook');
   } else {
     var renderers = new Map();
@@ -112,7 +138,7 @@
       supportsFiber: true,
       inject: function (renderer) { var id = ++uid; renderers.set(id, renderer); return id; },
       onCommitFiberRoot: function (id, root) { safeCommit(root); },
-      onCommitFiberUnmount: function () {},
+      onCommitFiberUnmount: function (id, fiber) { safeUnmount(fiber); },
       on: function () {},
       emit: function () {},
       checkDCE: function () {}
