@@ -18,6 +18,7 @@ Update version in all `package.json` files:
 - `package.json`
 - `packages/tracelet-next/package.json`
 - `packages/tracelet-vite/package.json`
+- `packages/tracelet-react/package.json`
 
 ### 2. Create Release Tag
 
@@ -46,6 +47,7 @@ The GitHub Actions workflow will:
    - `tracelet` (main package)
    - `tracelet-next` (Next.js plugin)
    - `tracelet-vite` (Vite plugin)
+   - `tracelet-react` (React render instrumentation)
 
 4. **Create GitHub Release** with binaries attached
 
@@ -56,11 +58,32 @@ The GitHub Actions workflow will:
 npm view tracelet version
 npm view tracelet-next version
 npm view tracelet-vite version
+npm view tracelet-react version
 
 # Test installation
 npm install -D tracelet@latest tracelet-next@latest
 npx tracelet --version
 ```
+
+## VS Code Extension (Marketplace)
+
+The extension is published separately (not part of the tag-triggered workflow).
+
+Prerequisites:
+- A Marketplace publisher matching `publisher` in `ui/vscode-extension/package.json`
+  (currently `traceletdev` — update if your publisher ID differs).
+- A Personal Access Token: `vsce login <publisher>` or `VSCE_PAT` env var.
+
+```bash
+cd ui/vscode-extension
+npm install
+npm run compile
+npx vsce package        # builds a .vsix — verify no missing-field errors
+npx vsce publish        # publishes to the Marketplace
+```
+
+An `icon` (128×128 PNG) is optional but recommended before publishing — add it to
+`ui/vscode-extension/` and reference it via `"icon"` in package.json.
 
 ## Manual Release (Alternative)
 

@@ -25,6 +25,7 @@ const packages = [
   { name: 'tracelet', path: '.' },
   { name: 'tracelet-next', path: 'packages/tracelet-next' },
   { name: 'tracelet-vite', path: 'packages/tracelet-vite' },
+  { name: 'tracelet-react', path: 'packages/tracelet-react' },
 ];
 
 function getVersion(pkgPath) {

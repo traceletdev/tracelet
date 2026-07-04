@@ -3,6 +3,14 @@
   "displayName": "Tracelet",
   "description": "Performance linting and diagnostics for your routes",
   "version": "0.5.0",
+  "publisher": "traceletdev",
+  "license": "MIT",
+  "author": "Moiz Imran <moizwasti@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/traceletdev/tracelet.git",
+    "directory": "ui/vscode-extension"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
