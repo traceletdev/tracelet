@@ -1,0 +1,40 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  snyk:
+    name: Snyk (SCA + code)
+    runs-on: ubuntu-latest
+    # Requires a SNYK_TOKEN secret. Skips (does not fail) when it isn't set —
+    # e.g. on forks — so the check never blocks contributors without access.
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Install Snyk
+        if: env.SNYK_TOKEN != ''
+        run: npm install -g snyk
+      - name: Snyk open source (dependencies)
+        if: env.SNYK_TOKEN != ''
+        run: snyk test --all-projects --exclude=node_modules,tests --severity-threshold=high
+      - name: Snyk Code (SAST)
+        if: env.SNYK_TOKEN != ''
+        run: snyk code test --severity-threshold=high
+      - name: Note when unconfigured
+        if: env.SNYK_TOKEN == ''
+        run: echo "SNYK_TOKEN not set — skipping Snyk scan. Add the secret to enable."
