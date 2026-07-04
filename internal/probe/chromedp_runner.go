@@ -9,54 +9,54 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-    "os"
+	"os"
 )
 
 type profileSettings struct {
-    cpuSlowdown   float64
-    downloadKbps  int64
-    uploadKbps    int64
-    latencyMs     int64
-    viewportWidth int64
-    viewportHeight int64
+	cpuSlowdown    float64
+	downloadKbps   int64
+	uploadKbps     int64
+	latencyMs      int64
+	viewportWidth  int64
+	viewportHeight int64
 }
 
 func getProfileSettings(p Profile) profileSettings {
-    if p == ProfileMobile {
-        return profileSettings{
-            cpuSlowdown:    4,
-            downloadKbps:   1500,
-            uploadKbps:     750,
-            latencyMs:      150,
-            viewportWidth:  375,
-            viewportHeight: 667,
-        }
-    }
-    return profileSettings{
-        cpuSlowdown:    2,
-        downloadKbps:   10000,
-        uploadKbps:     5000,
-        latencyMs:      40,
-        viewportWidth:  1366,
-        viewportHeight: 768,
-    }
+	if p == ProfileMobile {
+		return profileSettings{
+			cpuSlowdown:    4,
+			downloadKbps:   1500,
+			uploadKbps:     750,
+			latencyMs:      150,
+			viewportWidth:  375,
+			viewportHeight: 667,
+		}
+	}
+	return profileSettings{
+		cpuSlowdown:    2,
+		downloadKbps:   10000,
+		uploadKbps:     5000,
+		latencyMs:      40,
+		viewportWidth:  1366,
+		viewportHeight: 768,
+	}
 }
 
 // runOnce executes a single probe run and returns collected metrics.
 func runOnce(ctx context.Context, url string, ps profileSettings) (Metrics, error) {
-    // Throttling + viewport
-    if err := chromedp.Run(ctx,
-        emulation.SetCPUThrottlingRate(ps.cpuSlowdown),
-        emulation.SetDeviceMetricsOverride(ps.viewportWidth, ps.viewportHeight, 1.0, false),
-        network.Enable(),
-        network.SetCacheDisabled(true),
-        network.EmulateNetworkConditions(false, float64(ps.latencyMs), float64(ps.downloadKbps*1024/8), float64(ps.uploadKbps*1024/8)),
-    ); err != nil {
-        return Metrics{}, err
-    }
+	// Throttling + viewport
+	if err := chromedp.Run(ctx,
+		emulation.SetCPUThrottlingRate(ps.cpuSlowdown),
+		emulation.SetDeviceMetricsOverride(ps.viewportWidth, ps.viewportHeight, 1.0, false),
+		network.Enable(),
+		network.SetCacheDisabled(true),
+		network.EmulateNetworkConditions(false, float64(ps.latencyMs), float64(ps.downloadKbps*1024/8), float64(ps.uploadKbps*1024/8)),
+	); err != nil {
+		return Metrics{}, err
+	}
 
-    // Inject observers before any document loads
-    inject := `
+	// Inject observers before any document loads
+	inject := `
       (function(){
         if (window.__traceletMetrics) return;
         const data = { ttfb: 0, fcp: 0, lcp: 0, cls: 0, tbtLite: 0, fsi: 0 };
@@ -134,89 +134,89 @@ func runOnce(ctx context.Context, url string, ps profileSettings) (Metrics, erro
       })();
     `
 
-    if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-        _, err := page.AddScriptToEvaluateOnNewDocument(inject).Do(ctx)
-        return err
-    })); err != nil {
-        return Metrics{}, err
-    }
+	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		_, err := page.AddScriptToEvaluateOnNewDocument(inject).Do(ctx)
+		return err
+	})); err != nil {
+		return Metrics{}, err
+	}
 
-    // Navigate and wait a short, deterministic time for observers to flush
-    if err := chromedp.Run(ctx,
-        chromedp.Navigate(url),
-        chromedp.Sleep(2*time.Second),
-    ); err != nil {
-        return Metrics{}, err
-    }
+	// Navigate and wait a short, deterministic time for observers to flush
+	if err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
+		chromedp.Sleep(2*time.Second),
+	); err != nil {
+		return Metrics{}, err
+	}
 
-    var jsonStr string
-    if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools("JSON.stringify(window.__traceletMetrics||{})", &jsonStr)); err != nil {
-        return Metrics{}, err
-    }
-    var m Metrics
-    _ = json.Unmarshal([]byte(jsonStr), &m)
-    return m, nil
+	var jsonStr string
+	if err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools("JSON.stringify(window.__traceletMetrics||{})", &jsonStr)); err != nil {
+		return Metrics{}, err
+	}
+	var m Metrics
+	_ = json.Unmarshal([]byte(jsonStr), &m)
+	return m, nil
 }
 
 func runChromedp(url string, prof Profile, runs int, verbose bool) (Response, error) {
-    if runs <= 0 { runs = 1 }
-    ps := getProfileSettings(prof)
+	if runs <= 0 {
+		runs = 1
+	}
+	ps := getProfileSettings(prof)
 
-    // Allocator with minimal flags for determinism
-    opts := append(chromedp.DefaultExecAllocatorOptions[:],
-        chromedp.NoFirstRun,
-        chromedp.NoDefaultBrowserCheck,
-        chromedp.Flag("disable-background-timer-throttling", true),
-        chromedp.Flag("disable-extensions", true),
-        chromedp.Flag("disable-gpu", true),
-        chromedp.Flag("headless", true),
-        chromedp.Flag("hide-scrollbars", true),
-        chromedp.Flag("mute-audio", true),
-    )
-    if exec := os.Getenv("CHROME_PATH"); exec != "" {
-        opts = append(opts, chromedp.ExecPath(exec))
-    }
-    allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
-    defer cancelAlloc()
+	// Allocator with minimal flags for determinism
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.NoFirstRun,
+		chromedp.NoDefaultBrowserCheck,
+		chromedp.Flag("disable-background-timer-throttling", true),
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("headless", true),
+		chromedp.Flag("hide-scrollbars", true),
+		chromedp.Flag("mute-audio", true),
+	)
+	if exec := os.Getenv("CHROME_PATH"); exec != "" {
+		opts = append(opts, chromedp.ExecPath(exec))
+	}
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancelAlloc()
 
-    ctx, cancelCtx := chromedp.NewContext(allocCtx)
-    defer cancelCtx()
+	ctx, cancelCtx := chromedp.NewContext(allocCtx)
+	defer cancelCtx()
 
-    // Run N times and average metrics
-    var acc Metrics
-    var samples []Metrics
-    for i := 0; i < runs; i++ {
-        m, err := runOnce(ctx, url, ps)
-        if err != nil {
-            return Response{}, err
-        }
-        acc.TTFBms += m.TTFBms
-        acc.FCPms += m.FCPms
-        acc.LCPms += m.LCPms
-        acc.TBTms += m.TBTms
-        acc.FSIms += m.FSIms
-        acc.CLS += m.CLS
-        if verbose {
-            samples = append(samples, m)
-        }
-    }
-    // average
-    avg := Metrics{
-        TTFBms: acc.TTFBms / runs,
-        FCPms:  acc.FCPms / runs,
-        LCPms:  acc.LCPms / runs,
-        TBTms:  acc.TBTms / runs,
-        FSIms:  acc.FSIms / runs,
-        CLS:    acc.CLS / float64(runs),
-    }
-    return Response{
-        URL:     url,
-        Profile: string(prof),
-        RunAt:   time.Now().UTC().Format(time.RFC3339),
-        Metrics: avg,
-        Runs:    runs,
-        Samples: samples,
-    }, nil
+	// Run N times and average metrics
+	var acc Metrics
+	var samples []Metrics
+	for i := 0; i < runs; i++ {
+		m, err := runOnce(ctx, url, ps)
+		if err != nil {
+			return Response{}, err
+		}
+		acc.TTFBms += m.TTFBms
+		acc.FCPms += m.FCPms
+		acc.LCPms += m.LCPms
+		acc.TBTms += m.TBTms
+		acc.FSIms += m.FSIms
+		acc.CLS += m.CLS
+		if verbose {
+			samples = append(samples, m)
+		}
+	}
+	// average
+	avg := Metrics{
+		TTFBms: acc.TTFBms / runs,
+		FCPms:  acc.FCPms / runs,
+		LCPms:  acc.LCPms / runs,
+		TBTms:  acc.TBTms / runs,
+		FSIms:  acc.FSIms / runs,
+		CLS:    acc.CLS / float64(runs),
+	}
+	return Response{
+		URL:     url,
+		Profile: string(prof),
+		RunAt:   time.Now().UTC().Format(time.RFC3339),
+		Metrics: avg,
+		Runs:    runs,
+		Samples: samples,
+	}, nil
 }
-
-

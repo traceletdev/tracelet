@@ -1,0 +1,25 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - unconvert
+  settings:
+    errcheck:
+      # Writes to stdout / HTTP responses and deferred Close() are intentionally
+      # unchecked — excluding them is standard rather than churning the code.
+      exclude-functions:
+        - (*os.File).Close
+        - (net.Conn).Close
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
