@@ -44,6 +44,7 @@ This creates:
 | `rules` | `object` | Rule severity overrides |
 | `probe` | `object` | Probe configuration |
 | `collect` | `object` | Framework adapter configuration |
+| `hud` | `object` | HUD overlay configuration |
 
 ### Budgets
 
@@ -135,6 +136,25 @@ Configure framework adapter for stats collection:
 **Properties:**
 - `framework`: `"next"` or `"vite"` - Framework to use for collecting build stats
 - `statsFile`: `string` - Path to stats output file (default: `.tracelet/stats.json`)
+
+### HUD
+
+Configure the `tracelet hud` overlay server:
+
+```json
+{
+  "hud": {
+    "enabled": true,
+    "port": 3111
+  }
+}
+```
+
+**Properties:**
+- `enabled`: `boolean` - Set to `false` to disable the HUD (default: `true`). `tracelet hud` exits without serving.
+- `port`: `number` - Port to listen on (default: `3111`).
+
+Precedence: the `--port` flag overrides `hud.port`, which overrides the default.
 
 ## Extends
 
