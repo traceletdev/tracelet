@@ -31,7 +31,7 @@
     "vite",
     "web-vitals"
   ],
-  "author": "",
+  "author": "Moiz Imran <moizwasti@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -46,4 +46,3 @@
     "package.json"
   ]
 }
-

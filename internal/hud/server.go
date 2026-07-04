@@ -15,6 +15,7 @@ import (
 	"github.com/gobwas/ws/wsutil"
 
 	"tracelet/internal/config"
+	"tracelet/internal/hud/frameworks"
 	"tracelet/internal/lint"
 )
 
@@ -34,16 +35,18 @@ type RouteMetrics struct {
 }
 
 type Hub struct {
-	mu      sync.Mutex
-	conns   map[net.Conn]struct{}
-	lastMsg []byte
-	metrics map[string]RouteMetrics // route path -> metrics
+	mu         sync.Mutex
+	conns      map[net.Conn]struct{}
+	lastMsg    []byte
+	metrics    map[string]RouteMetrics // route path -> metrics
+	components []frameworks.Component  // current component tree
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		conns:   make(map[net.Conn]struct{}),
-		metrics: make(map[string]RouteMetrics),
+		conns:      make(map[net.Conn]struct{}),
+		metrics:    make(map[string]RouteMetrics),
+		components: []frameworks.Component{},
 	}
 }
 
@@ -98,44 +101,92 @@ func Start(port int, cfgPath string) error {
 			for {
 				data, _, err := wsutil.ReadClientData(conn)
 				if err != nil {
+					log.Printf("[HUD] WebSocket read error: %v", err)
 					return
 				}
-				// Try to parse as metrics message
+				log.Printf("[HUD] Received WebSocket message (length: %d bytes)", len(data))
+				// Try to parse as metrics or components message
 				var msg map[string]interface{}
 				if err := json.Unmarshal(data, &msg); err == nil {
-					if msgType, ok := msg["type"].(string); ok && msgType == "metrics" {
-						if route, ok := msg["route"].(string); ok {
-							if metricsData, ok := msg["metrics"].(map[string]interface{}); ok {
-								var m RouteMetrics
-								if ttfb, ok := metricsData["ttfb"].(float64); ok {
-									m.TTFBms = int(ttfb)
+					if msgType, ok := msg["type"].(string); ok {
+						if msgType == "components" {
+							// Handle component tree updates
+							log.Printf("[HUD] Received components message (raw data length: %d)", len(data))
+							if componentsData, ok := msg["components"].([]interface{}); ok {
+								log.Printf("[HUD] Parsing %d components", len(componentsData))
+								var components []frameworks.Component
+								for _, compData := range componentsData {
+									if compMap, ok := compData.(map[string]interface{}); ok {
+										var comp frameworks.Component
+										if name, ok := compMap["name"].(string); ok {
+											comp.Name = name
+										}
+										// Handle renderCount which might be float64 (from JSON) or already int
+										if count, ok := compMap["renderCount"].(float64); ok {
+											comp.RenderCount = int(count)
+										} else if count, ok := compMap["renderCount"].(int); ok {
+											comp.RenderCount = count
+										}
+										if v, ok := compMap["instances"].(float64); ok {
+											comp.Instances = int(v)
+										}
+										if v, ok := compMap["maxRenders"].(float64); ok {
+											comp.MaxRenders = int(v)
+										}
+										components = append(components, comp)
+									}
 								}
-								if fcp, ok := metricsData["fcp"].(float64); ok {
-									m.FCPms = int(fcp)
-								}
-								if lcp, ok := metricsData["lcp"].(float64); ok {
-									m.LCPms = int(lcp)
-								}
-								if cls, ok := metricsData["cls"].(float64); ok {
-									m.CLS = cls
-								}
-								if tbt, ok := metricsData["tbt"].(float64); ok {
-									m.TBTms = int(tbt)
-								}
-								if fsi, ok := metricsData["fsi"].(float64); ok {
-									m.FSIms = int(fsi)
-								}
+								log.Printf("[HUD] Storing %d components in hub", len(components))
 								hub.mu.Lock()
-								hub.metrics[route] = m
+								hub.components = components
 								hub.mu.Unlock()
-								// Broadcast updated metrics to all clients
+								// Broadcast to all clients
 								evt := map[string]interface{}{
-									"type":    "metrics",
-									"route":   route,
-									"metrics": m,
-									"sentAt":  time.Now().UTC().Format(time.RFC3339),
+									"type":       "components",
+									"components": components,
+									"sentAt":     time.Now().UTC().Format(time.RFC3339),
 								}
+								log.Printf("[HUD] Broadcasting %d components to clients", len(components))
 								hub.Broadcast(evt)
+							} else {
+								log.Printf("[HUD] Failed to parse components data: componentsData type assertion failed")
+							}
+							continue
+						}
+						if msgType == "metrics" {
+							if route, ok := msg["route"].(string); ok {
+								if metricsData, ok := msg["metrics"].(map[string]interface{}); ok {
+									var m RouteMetrics
+									if ttfb, ok := metricsData["ttfb"].(float64); ok {
+										m.TTFBms = int(ttfb)
+									}
+									if fcp, ok := metricsData["fcp"].(float64); ok {
+										m.FCPms = int(fcp)
+									}
+									if lcp, ok := metricsData["lcp"].(float64); ok {
+										m.LCPms = int(lcp)
+									}
+									if cls, ok := metricsData["cls"].(float64); ok {
+										m.CLS = cls
+									}
+									if tbt, ok := metricsData["tbt"].(float64); ok {
+										m.TBTms = int(tbt)
+									}
+									if fsi, ok := metricsData["fsi"].(float64); ok {
+										m.FSIms = int(fsi)
+									}
+									hub.mu.Lock()
+									hub.metrics[route] = m
+									hub.mu.Unlock()
+									// Broadcast updated metrics to all clients
+									evt := map[string]interface{}{
+										"type":    "metrics",
+										"route":   route,
+										"metrics": m,
+										"sentAt":  time.Now().UTC().Format(time.RFC3339),
+									}
+									hub.Broadcast(evt)
+								}
 							}
 						}
 					}
@@ -149,6 +200,13 @@ func Start(port int, cfgPath string) error {
 		fmt.Fprint(w, overlayJS(port))
 	})
 
+	// /hook.js installs the React DevTools hook. It MUST load in <head> before
+	// the app's React bundle so render tracking works (see overlay Components tab).
+	http.HandleFunc("/hook.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		fmt.Fprint(w, getReactInstrumentationCode())
+	})
+
 	// periodic lint and broadcast
 	go func() {
 		for {
@@ -160,13 +218,19 @@ func Start(port int, cfgPath string) error {
 				for k, v := range hub.metrics {
 					metricsCopy[k] = v
 				}
+				componentsCopy := make([]frameworks.Component, len(hub.components))
+				copy(componentsCopy, hub.components)
 				hub.mu.Unlock()
+				if len(componentsCopy) > 0 {
+					log.Printf("[HUD] Lint broadcast includes %d components", len(componentsCopy))
+				}
 				evt := map[string]interface{}{
-					"type":    "lint",
-					"results": results,
-					"stats":   st,
-					"metrics": metricsCopy,
-					"sentAt":  time.Now().UTC().Format(time.RFC3339),
+					"type":       "lint",
+					"results":    results,
+					"stats":      st,
+					"metrics":    metricsCopy,
+					"components": componentsCopy,
+					"sentAt":     time.Now().UTC().Format(time.RFC3339),
 				}
 				hub.Broadcast(evt)
 			}
@@ -180,6 +244,8 @@ func Start(port int, cfgPath string) error {
 }
 
 func overlayJS(port int) string {
+	// Read React instrumentation code from package
+	reactCode := getReactInstrumentationCode()
 	return fmt.Sprintf(`(function(){
       if (window.__traceletHUD) return;
 
@@ -239,8 +305,12 @@ func overlayJS(port int) string {
       var metricsTab = document.createElement('button');
       metricsTab.textContent = 'Metrics';
       metricsTab.style.cssText = 'background:transparent;border:none;color:#888;padding:6px 12px;cursor:pointer;border-bottom:2px solid transparent;font-size:12px;';
+      var componentsTab = document.createElement('button');
+      componentsTab.textContent = 'Components';
+      componentsTab.style.cssText = 'background:transparent;border:none;color:#888;padding:6px 12px;cursor:pointer;border-bottom:2px solid transparent;font-size:12px;';
       tabs.appendChild(routesTab);
       tabs.appendChild(metricsTab);
+      tabs.appendChild(componentsTab);
       content.appendChild(tabs);
 
       var routesList = document.createElement('div');
@@ -253,25 +323,44 @@ func overlayJS(port int) string {
       metricsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
       content.appendChild(metricsList);
 
+      // Reset control for the Components tab: zero counts, do one interaction,
+      // see exactly what it re-rendered.
+      var componentsBar = document.createElement('div');
+      componentsBar.id = '__tracelet_components_bar';
+      componentsBar.style.cssText = 'display:none;justify-content:flex-end;margin-bottom:6px;';
+      var resetBtn = document.createElement('button');
+      resetBtn.textContent = '⟲ Reset counts';
+      resetBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#ccc;font-size:10px;padding:4px 8px;border-radius:4px;cursor:pointer;';
+      resetBtn.addEventListener('click', function(){
+        if (window.__traceletReactInstrumentation) window.__traceletReactInstrumentation.reset();
+        if (window.__traceletRefreshMetrics) window.__traceletRefreshMetrics();
+        updateComponentsDisplay([]);
+      });
+      componentsBar.appendChild(resetBtn);
+      content.appendChild(componentsBar);
+
+      var componentsList = document.createElement('div');
+      componentsList.id = '__tracelet_components';
+      componentsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
+      content.appendChild(componentsList);
+
       var currentTab = 'routes';
-      routesTab.addEventListener('click', function(){
-        currentTab = 'routes';
-        routesList.style.display = 'flex';
-        metricsList.style.display = 'none';
-        routesTab.style.color = '#fff';
-        routesTab.style.borderBottomColor = '#3b82f6';
-        metricsTab.style.color = '#888';
-        metricsTab.style.borderBottomColor = 'transparent';
-      });
-      metricsTab.addEventListener('click', function(){
-        currentTab = 'metrics';
-        routesList.style.display = 'none';
-        metricsList.style.display = 'flex';
-        routesTab.style.color = '#888';
-        routesTab.style.borderBottomColor = 'transparent';
-        metricsTab.style.color = '#fff';
-        metricsTab.style.borderBottomColor = '#3b82f6';
-      });
+      function switchTab(tab){
+        currentTab = tab;
+        routesList.style.display = tab === 'routes' ? 'flex' : 'none';
+        metricsList.style.display = tab === 'metrics' ? 'flex' : 'none';
+        componentsList.style.display = tab === 'components' ? 'flex' : 'none';
+        componentsBar.style.display = tab === 'components' ? 'flex' : 'none';
+        routesTab.style.color = tab === 'routes' ? '#fff' : '#888';
+        routesTab.style.borderBottomColor = tab === 'routes' ? '#3b82f6' : 'transparent';
+        metricsTab.style.color = tab === 'metrics' ? '#fff' : '#888';
+        metricsTab.style.borderBottomColor = tab === 'metrics' ? '#3b82f6' : 'transparent';
+        componentsTab.style.color = tab === 'components' ? '#fff' : '#888';
+        componentsTab.style.borderBottomColor = tab === 'components' ? '#3b82f6' : 'transparent';
+      }
+      routesTab.addEventListener('click', function(){ switchTab('routes'); });
+      metricsTab.addEventListener('click', function(){ switchTab('metrics'); });
+      componentsTab.addEventListener('click', function(){ switchTab('components'); });
 
       // Add pulse animation
       var style = document.createElement('style');
@@ -322,6 +411,23 @@ func overlayJS(port int) string {
         var rounded = Math.round(cls * 100) / 100;
         return rounded.toFixed(2);
       }
+
+      // React instrumentation injection
+      (function(){
+        if (window.__traceletReactInjected) return;
+        window.__traceletReactInjected = true;
+        try {
+          var reactCode = %q;
+          var script = document.createElement('script');
+          script.textContent = reactCode;
+          (document.head || document.documentElement).appendChild(script);
+          // Don't remove script immediately - let it execute first
+          // Scripts execute synchronously when textContent is set, but removing too early can cause issues
+          setTimeout(function(){ try { script.remove(); } catch(e){} }, 0);
+        } catch(e) {
+          console.warn('[tracelet] Failed to inject React instrumentation:', e);
+        }
+      })();
 
       // Metrics collection
       (function(){
@@ -487,16 +593,165 @@ func overlayJS(port int) string {
           routeMetrics[route] = metrics;
           sendMetrics(route, metrics);
           updateMetricsDisplay();
+
+          // Also collect and send component data if React instrumentation is available
+          if (window.__traceletReactInstrumentation) {
+            try {
+              var components = window.__traceletReactInstrumentation.getComponents();
+              if (window.__TRACELET_DEBUG) {
+                console.log('[tracelet] About to send components:', components ? components.length : 'null');
+                console.log('[tracelet] Components before stringify:', components);
+              }
+              // Clean components for JSON serialization (remove any non-serializable properties)
+              var cleanComponents = [];
+              if (components && Array.isArray(components)) {
+                for (var i = 0; i < components.length; i++) {
+                  var comp = components[i];
+                  cleanComponents.push({
+                    name: comp.name || 'Unknown',
+                    renderCount: comp.renderCount || 0,
+                    instances: comp.instances || 0,
+                    maxRenders: comp.maxRenders || 0,
+                    depth: comp.depth || 0
+                  });
+                }
+              }
+              if (window.__TRACELET_DEBUG) {
+                console.log('[tracelet] Cleaned components:', cleanComponents.length);
+                console.log('[tracelet] First cleaned component:', cleanComponents[0]);
+                var wsState = wsConnection ? (wsConnection.readyState === WebSocket.OPEN ? 'OPEN' : 'state ' + wsConnection.readyState) : 'no connection';
+                console.log('[tracelet] WebSocket state:', wsState);
+                console.log('[tracelet] wsConnection exists:', !!wsConnection);
+                if (wsConnection) {
+                  console.log('[tracelet] wsConnection.readyState:', wsConnection.readyState, 'WebSocket.OPEN:', WebSocket.OPEN);
+                }
+              }
+              // Always send, even if empty (for debugging)
+              if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                var msg = {
+                  type: 'components',
+                  components: cleanComponents,
+                  sentAt: new Date().toISOString()
+                };
+                var msgStr = JSON.stringify(msg);
+                if (window.__TRACELET_DEBUG) {
+                  console.log('[tracelet] Sending message (length:', msgStr.length, '):', msgStr.substring(0, 300));
+                  console.log('[tracelet] Components array in message:', msg.components ? msg.components.length : 'null');
+                }
+                try {
+                  wsConnection.send(msgStr);
+                  if (window.__TRACELET_DEBUG) {
+                    console.log('[tracelet] Message sent successfully');
+                  }
+                } catch(e) {
+                  if (window.__TRACELET_DEBUG) {
+                    console.error('[tracelet] Error sending message:', e);
+                  }
+                }
+              } else {
+                if (window.__TRACELET_DEBUG) {
+                  console.warn('[tracelet] WebSocket not open, cannot send components. State:', wsConnection ? wsConnection.readyState : 'no connection');
+                }
+              }
+            } catch(e) {
+              if (window.__TRACELET_DEBUG) console.warn('[tracelet] Component collection error:', e);
+            }
+          }
         }
+
+        // Periodic component collection - use ws directly to avoid closure issues
+        var wsForPeriodic = null;
+        setInterval(function(){
+          // Use wsConnection from outer scope, but also check ws directly
+          var activeWS = wsConnection || wsForPeriodic;
+          if (!activeWS && window.__traceletWS) {
+            activeWS = window.__traceletWS;
+          }
+
+          if (window.__traceletReactInstrumentation) {
+            try {
+              var components = window.__traceletReactInstrumentation.getComponents();
+              if (window.__TRACELET_DEBUG) {
+                console.log('[tracelet] Periodic collection: found', components ? components.length : 0, 'components');
+              }
+              // Clean components for JSON serialization
+              var cleanComponents = [];
+              if (components && Array.isArray(components)) {
+                for (var i = 0; i < components.length; i++) {
+                  var comp = components[i];
+                  cleanComponents.push({
+                    name: comp.name || 'Unknown',
+                    renderCount: comp.renderCount || 0,
+                    instances: comp.instances || 0,
+                    maxRenders: comp.maxRenders || 0,
+                    depth: comp.depth || 0
+                  });
+                }
+              }
+              if (window.__TRACELET_DEBUG) {
+                console.log('[tracelet] Periodic collection: cleaned', cleanComponents.length, 'components');
+                var wsState = activeWS ? (activeWS.readyState === WebSocket.OPEN ? 'OPEN' : 'state ' + activeWS.readyState) : 'no connection';
+                console.log('[tracelet] Periodic collection: WebSocket state:', wsState);
+                console.log('[tracelet] Periodic collection: activeWS exists:', !!activeWS);
+                console.log('[tracelet] Periodic collection: wsConnection exists:', !!wsConnection);
+                if (activeWS) {
+                  console.log('[tracelet] Periodic collection: activeWS.readyState:', activeWS.readyState, 'WebSocket.OPEN:', WebSocket.OPEN);
+                }
+              }
+              // Always send component data, even if empty (to update UI state)
+              if (activeWS && activeWS.readyState === WebSocket.OPEN) {
+                var msg = {
+                  type: 'components',
+                  components: cleanComponents,
+                  sentAt: new Date().toISOString()
+                };
+                var msgStr = JSON.stringify(msg);
+                if (window.__TRACELET_DEBUG) {
+                  console.log('[tracelet] Periodic collection: Sending', cleanComponents.length, 'components');
+                }
+                try {
+                  activeWS.send(msgStr);
+                  if (window.__TRACELET_DEBUG) {
+                    console.log('[tracelet] Periodic collection: Message sent successfully');
+                  }
+                } catch(e) {
+                  if (window.__TRACELET_DEBUG) {
+                    console.error('[tracelet] Periodic collection: Error sending:', e);
+                  }
+                }
+              } else {
+                if (window.__TRACELET_DEBUG) {
+                  console.warn('[tracelet] Periodic collection: WebSocket not open. activeWS:', !!activeWS, 'state:', activeWS ? activeWS.readyState : 'no connection');
+                }
+              }
+            } catch(e) {
+              if (window.__TRACELET_DEBUG) console.warn('[tracelet] Component collection error:', e);
+            }
+          } else {
+            if (window.__TRACELET_DEBUG) {
+              console.log('[tracelet] Periodic collection: No React instrumentation available');
+            }
+          }
+        }, 3000);
 
         window.__traceletRefreshMetrics = collectAndSend;
         window.__traceletRouteMetrics = routeMetrics;
 
-        // Initial collection - wait longer for LCP/CLS to be ready
-        setTimeout(collectAndSend, 2000);
-
-        // Also collect after a longer delay to catch LCP
-        setTimeout(collectAndSend, 5000);
+        // Queue initial collection to run after WebSocket is open
+        var initialCollectionQueued = false;
+        function queueInitialCollection() {
+          if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+            // Initial collection - wait longer for LCP/CLS to be ready
+            setTimeout(collectAndSend, 2000);
+            // Also collect after a longer delay to catch LCP
+            setTimeout(collectAndSend, 5000);
+            initialCollectionQueued = true;
+          } else if (!initialCollectionQueued) {
+            // Retry after 100ms if WebSocket isn't ready yet
+            setTimeout(queueInitialCollection, 100);
+          }
+        }
+        queueInitialCollection();
 
         // Route change detection
         var originalPushState = history.pushState;
@@ -675,13 +930,140 @@ func overlayJS(port int) string {
             window.__traceletUpdateMetricsDisplay();
           }
         }
+        // Handle lint messages that include components
+        if (msg.type === 'lint' && msg.components) {
+          if (window.__TRACELET_DEBUG) console.log('[tracelet] Received components in lint message:', msg.components ? msg.components.length : 0);
+          updateComponentsDisplay(msg.components);
+        }
+        // Handle components messages
+        if (msg.type === 'components' && msg.components) {
+          if (window.__TRACELET_DEBUG) console.log('[tracelet] Received components message:', msg.components ? msg.components.length : 0);
+          updateComponentsDisplay(msg.components);
+        }
       }
+
+      function updateComponentsDisplay(components){
+        var componentsEl = document.getElementById('__tracelet_components');
+        if (!componentsEl) {
+          if (window.__TRACELET_DEBUG) console.warn('[tracelet] Components element not found');
+          return;
+        }
+        componentsEl.innerHTML = '';
+
+        // Debug logging
+        if (window.__TRACELET_DEBUG) {
+          console.log('[tracelet] updateComponentsDisplay called with:', components ? components.length : 'null', 'components');
+          console.log('[tracelet] Components data:', components);
+        }
+
+        if (!components || components.length === 0) {
+          var empty = document.createElement('div');
+          empty.style.cssText = 'color:#888;text-align:center;padding:12px;font-size:12px;';
+          var debugInfo = [];
+          if (window.React) debugInfo.push('React found');
+          if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+            var hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+            var rendererCount = hook.renderers ? Object.keys(hook.renderers).length : 0;
+            debugInfo.push('DevTools hook found (' + rendererCount + ' renderer' + (rendererCount !== 1 ? 's' : '') + ')');
+            if (hook.getFiberRoots) {
+              var totalRoots = 0;
+              try {
+                for (var rendererId in hook.renderers || {}) {
+                  var roots = hook.getFiberRoots(parseInt(rendererId));
+                  if (roots) totalRoots += Array.from(roots).length;
+                }
+                debugInfo.push(totalRoots + ' root' + (totalRoots !== 1 ? 's' : ''));
+              } catch(e) {}
+            }
+          }
+          if (window.__traceletReactInstrumentation) {
+            var counts = window.__traceletReactInstrumentation.getRenderCounts ? window.__traceletReactInstrumentation.getRenderCounts() : {};
+            var countKeys = Object.keys(counts || {});
+            var trackedCount = countKeys.filter(function(k){ return counts[k] > 0; }).length;
+            debugInfo.push('Instrumentation loaded (' + trackedCount + ' component' + (trackedCount !== 1 ? 's' : '') + ' tracked)');
+          }
+          var msg = 'No React re-renders tracked yet.';
+          msg += '\\n\\nRender tracking needs the tracelet hook to load BEFORE React. Add this to <head>, before your app bundle:';
+          msg += '\\n<script src="http://localhost:%d/hook.js"></script>';
+          msg += '\\n\\nOr, in a bundled app, import "tracelet-react" as the first line of your dev entry.';
+          if (debugInfo.length > 0) {
+            msg += '\\n\\nStatus: ' + debugInfo.join(', ');
+          }
+          empty.style.whiteSpace = 'pre-line';
+          empty.textContent = msg;
+          componentsEl.appendChild(empty);
+          return;
+        }
+
+        // Rank by the hottest single instance (maxRenders) — a lone instance
+        // rendering 200x is the real smell; total is inflated by instance count.
+        function maxOf(c){ return c.maxRenders || c.renderCount || 0; }
+        var sorted = components.slice().sort(function(a, b){
+          return maxOf(b) - maxOf(a);
+        });
+
+        sorted.forEach(function(comp){
+          var el = document.createElement('div');
+          el.style.cssText = 'padding:8px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);border-radius:4px;';
+
+          var nameRow = document.createElement('div');
+          nameRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+
+          var nameEl = document.createElement('span');
+          nameEl.style.cssText = 'color:#3b82f6;font-family:ui-monospace,monospace;font-size:11px;font-weight:600;';
+          nameEl.textContent = comp.name || 'Unknown';
+          nameRow.appendChild(nameEl);
+
+          // Color by max-per-instance, not total.
+          var mx = maxOf(comp);
+          var total = comp.renderCount || 0;
+          var countEl = document.createElement('span');
+          countEl.style.cssText = 'color:' + (mx > 10 ? '#ef4444' : mx > 5 ? '#f59e0b' : '#10b981') + ';font-family:ui-monospace,monospace;font-size:11px;font-weight:600;';
+          countEl.textContent = total + ' render' + (total !== 1 ? 's' : '');
+          nameRow.appendChild(countEl);
+          el.appendChild(nameRow);
+
+          // Per-instance breakdown: "N instances · max M" (only when known).
+          var inst = comp.instances || 0;
+          if (inst > 0) {
+            var sub = document.createElement('div');
+            sub.style.cssText = 'display:flex;justify-content:space-between;color:#888;font-size:10px;font-family:ui-monospace,monospace;margin-top:3px;';
+            var left = document.createElement('span');
+            left.textContent = inst + ' instance' + (inst !== 1 ? 's' : '');
+            var right = document.createElement('span');
+            right.style.color = (mx > 10 ? '#ef4444' : mx > 5 ? '#f59e0b' : '#888');
+            right.textContent = 'max ' + mx + '/instance';
+            sub.appendChild(left);
+            sub.appendChild(right);
+            el.appendChild(sub);
+          }
+
+          componentsEl.appendChild(el);
+        });
+      }
+
+      window.__traceletUpdateComponentsDisplay = updateComponentsDisplay;
 
       var ws = new WebSocket('ws://'+location.hostname+':%d/ws');
       wsConnection = ws;
+      window.__traceletWS = ws; // Also expose globally for debugging
+      if (window.__TRACELET_DEBUG) {
+        console.log('[tracelet] WebSocket created, initial state:', ws.readyState);
+      }
       ws.onopen = function(){
         var indicator = header.querySelector('span span');
         if (indicator) indicator.style.background = '#10b981';
+        if (window.__TRACELET_DEBUG) {
+          console.log('[tracelet] WebSocket connection opened');
+          console.log('[tracelet] ws.readyState after open:', ws.readyState);
+          console.log('[tracelet] wsConnection.readyState after open:', wsConnection ? wsConnection.readyState : 'null');
+        }
+        // Trigger initial collection now that WebSocket is ready
+        if (window.__traceletRefreshMetrics && !window.__traceletInitialCollectionQueued) {
+          window.__traceletInitialCollectionQueued = true;
+          setTimeout(window.__traceletRefreshMetrics, 2000);
+          setTimeout(window.__traceletRefreshMetrics, 5000);
+        }
       };
       ws.onclose = function(){
         var indicator = header.querySelector('span span');
@@ -694,7 +1076,13 @@ func overlayJS(port int) string {
       ws.onmessage = function(ev){
         try{
           var msg = JSON.parse(ev.data);
-          if (window.__TRACELET_DEBUG) { console.debug('[tracelet]', msg); }
+          if (window.__TRACELET_DEBUG) {
+            console.log('[tracelet] Received WebSocket message type:', msg.type);
+            if (msg.type === 'components') {
+              console.log('[tracelet] Components in message:', msg.components ? msg.components.length : 'null');
+              console.log('[tracelet] First component:', msg.components && msg.components.length > 0 ? msg.components[0] : 'none');
+            }
+          }
           updateStatus(msg);
         }catch(e){
           if (window.__TRACELET_DEBUG) { console.error('[tracelet]', e); }
@@ -708,5 +1096,14 @@ func overlayJS(port int) string {
       routesList.appendChild(empty);
 
       window.__traceletHUD = true;
-    })();`, port)
+    })();`, reactCode, port, port)
+}
+
+// getReactInstrumentationCode returns the React instrumentation JavaScript code
+func getReactInstrumentationCode() string {
+	reactInst := frameworks.GetInstrumentation("react")
+	if reactInst != nil {
+		return reactInst.Install()
+	}
+	return "// React instrumentation not available"
 }

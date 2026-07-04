@@ -55,7 +55,8 @@ jobs:
             const packages = [
               { path: './package.json' },
               { path: './packages/tracelet-next/package.json' },
-              { path: './packages/tracelet-vite/package.json' }
+              { path: './packages/tracelet-vite/package.json' },
+              { path: './packages/tracelet-react/package.json' }
             ];
             packages.forEach(({ path }) => {
               if (fs.existsSync(path)) {
@@ -70,6 +71,7 @@ jobs:
         run: |
           cd packages/tracelet-next && npm publish --access public
           cd ../tracelet-vite && npm publish --access public
+          cd ../tracelet-react && npm publish --access public
           cd ../.. && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

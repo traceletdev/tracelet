@@ -1,0 +1,22 @@
+{
+  "name": "tracelet-react",
+  "version": "0.5.0",
+  "description": "Runtime instrumentation for React component render tracking",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "keywords": [
+    "react",
+    "performance",
+    "tracelet",
+    "rerender",
+    "profiling"
+  ],
+  "author": "Moiz Imran <moizwasti@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=16.0.0"
+  }
+}

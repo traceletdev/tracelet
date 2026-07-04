@@ -306,11 +306,27 @@ func runCI(args []string) {
 func runHUD(args []string) {
 	fs := flag.NewFlagSet("hud", flag.ExitOnError)
 	var (
-		port    = fs.Int("port", 3111, "port to listen on")
+		port    = fs.Int("port", 0, "port to listen on (default: config hud.port or 3111)")
 		cfgPath = fs.String("config", "", "path to config")
 	)
 	_ = fs.Parse(args)
-	if err := hud.Start(*port, *cfgPath); err != nil {
+
+	// Precedence for port and enable/disable: CLI flag > config > built-in default.
+	resolvedPort := *port
+	if cfg, err := config.Load(*cfgPath); err == nil {
+		if !cfg.HUD.IsEnabled() {
+			fmt.Fprintln(os.Stderr, "hud disabled in config (hud.enabled = false)")
+			os.Exit(2)
+		}
+		if resolvedPort == 0 {
+			resolvedPort = cfg.HUD.Port
+		}
+	}
+	if resolvedPort == 0 {
+		resolvedPort = 3111
+	}
+
+	if err := hud.Start(resolvedPort, *cfgPath); err != nil {
 		fmt.Fprintf(os.Stderr, "hud error: %v\n", err)
 		os.Exit(2)
 	}

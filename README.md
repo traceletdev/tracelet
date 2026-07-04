@@ -81,6 +81,16 @@ tracelet hud
 # Then add <script src="http://localhost:3111/overlay.js"></script> to your app
 ```
 
+The overlay shows a **Routes** tab (lint budgets), a **Metrics** tab (live Web Vitals), and a
+**Components** tab (React re-render counts). React tracking needs its hook loaded *before* React —
+add this to `<head>`, before your app bundle:
+
+```html
+<script src="http://localhost:3111/hook.js"></script>
+```
+
+See [`tracelet-react`](./packages/tracelet-react/README.md) for the bundled-app (`import`) setup.
+
 ### 🔄 CI
 Automated checks with baseline comparison. GitHub Action ready.
 

@@ -22,12 +22,22 @@ type Collect struct {
 	StatsFile string `json:"statsFile,omitempty"`
 }
 
+type HUD struct {
+	// Enabled defaults to true; set to false to disable the HUD via config.
+	Enabled *bool `json:"enabled,omitempty"`
+	Port    int   `json:"port,omitempty"`
+}
+
+// IsEnabled reports whether the HUD is enabled (default true unless explicitly disabled).
+func (h HUD) IsEnabled() bool { return h.Enabled == nil || *h.Enabled }
+
 type Config struct {
 	Extends []string          `json:"extends,omitempty"`
 	Budgets map[string]Budget `json:"budgets,omitempty"`
 	Rules   map[string]string `json:"rules,omitempty"`
 	Probe   Probe             `json:"probe,omitempty"`
 	Collect Collect           `json:"collect"`
+	HUD     HUD               `json:"hud,omitempty"`
 }
 
 func DefaultConfig() Config {
@@ -48,8 +58,11 @@ func DefaultConfig() Config {
 		},
 		Probe:   Probe{Profile: "desktop", Runs: 1},
 		Collect: Collect{Framework: "next", StatsFile: ".tracelet/stats.json"},
+		HUD:     HUD{Enabled: boolPtr(true), Port: 3111},
 	}
 }
+
+func boolPtr(b bool) *bool { return &b }
 
 func Load(path string) (Config, error) {
 	if path == "" {
