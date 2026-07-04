@@ -24,4 +24,3 @@ module.exports = function collect() {
 if (require.main === module) {
   module.exports();
 }
-

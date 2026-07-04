@@ -38,8 +38,11 @@ module.exports = function traceletPlugin() {
           const size = compressed.length;
           homeBytes += size;
           // Detect third-party: Vite often names vendor chunks as "vendor-*.js" or includes node_modules imports
-          if (fileName.includes('vendor') || fileName.includes('chunk-vendor') ||
-              (chunk.imports && chunk.imports.some(imp => imp && imp.includes('node_modules')))) {
+          if (
+            fileName.includes('vendor') ||
+            fileName.includes('chunk-vendor') ||
+            (chunk.imports && chunk.imports.some(imp => imp && imp.includes('node_modules')))
+          ) {
             thirdPartyBytes += size;
           }
         }
@@ -47,11 +50,9 @@ module.exports = function traceletPlugin() {
       routes.push({
         path: '/',
         jsGzipBytes: homeBytes,
-        thirdPartyJsBytes: thirdPartyBytes
+        thirdPartyJsBytes: thirdPartyBytes,
       });
       writeStats(routes, resolvedOutDir);
     },
   };
 };
-
-

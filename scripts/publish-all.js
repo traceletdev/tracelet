@@ -74,10 +74,12 @@ function main() {
   }
 
   // Get current versions
-  const versions = packages.map(pkg => ({
-    ...pkg,
-    version: getVersion(pkg.path)
-  })).filter(pkg => pkg.version !== null);
+  const versions = packages
+    .map(pkg => ({
+      ...pkg,
+      version: getVersion(pkg.path),
+    }))
+    .filter(pkg => pkg.version !== null);
 
   if (versions.length === 0) {
     console.error('No packages found with package.json');
@@ -111,4 +113,3 @@ if (require.main === module) {
 }
 
 module.exports = { getVersion, setVersion, publishPackage };
-

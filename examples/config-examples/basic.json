@@ -1,0 +1,13 @@
+{
+  "extends": ["recommended"],
+  "budgets": {
+    "default": { "initialJs": "35kb", "thirdPartyJs": "50kb" }
+  },
+  "rules": {
+    "route-initial-js": "error",
+    "unoptimized-image": "warn",
+    "font-display": "info"
+  },
+  "probe": { "profile": "desktop", "runs": 1 },
+  "collect": { "framework": "next", "statsFile": ".tracelet/stats.json" }
+}

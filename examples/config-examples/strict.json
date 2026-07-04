@@ -1,0 +1,18 @@
+{
+  "extends": ["recommended"],
+  "budgets": {
+    "default": { "initialJs": "20kb", "thirdPartyJs": "25kb" },
+    "/": { "initialJs": "10kb" }
+  },
+  "rules": {
+    "route-initial-js": "error",
+    "unoptimized-image": "error",
+    "missing-image-dimensions": "error",
+    "render-blocking-resources": "error",
+    "font-display": "warn",
+    "missing-preconnect": "warn",
+    "missing-alt-text": "error"
+  },
+  "probe": { "profile": "mobile", "runs": 3 },
+  "collect": { "framework": "next", "statsFile": ".tracelet/stats.json" }
+}

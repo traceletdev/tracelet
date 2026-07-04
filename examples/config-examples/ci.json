@@ -1,0 +1,14 @@
+{
+  "extends": ["recommended"],
+  "budgets": {
+    "default": { "initialJs": "30kb", "thirdPartyJs": "40kb" },
+    "/product": { "initialJs": "45kb" }
+  },
+  "rules": {
+    "route-initial-js": "error",
+    "unoptimized-image": "warn",
+    "missing-alt-text": "warn"
+  },
+  "probe": { "profile": "desktop", "runs": 3 },
+  "collect": { "framework": "vite", "statsFile": ".tracelet/stats.json" }
+}

@@ -65,4 +65,3 @@ try {
   console.warn(`[tracelet] Failed to link binary:`, err.message);
   console.warn(`[tracelet] You can still use 'npx tracelet' or the full path`);
 }
-

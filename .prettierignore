@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+binaries/
+coverage/
+package-lock.json
+**/package-lock.json
+ui/vscode-extension/out/
+
+# Kept byte-identical with internal/hud/frameworks/react.js via a copy step;
+# formatting only one side would cause drift.
+packages/tracelet-react/index.js
+internal/hud/frameworks/react.js
