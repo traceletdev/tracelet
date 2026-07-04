@@ -220,7 +220,9 @@ MIT
 
 ## Contributing
 
-Contributions welcome! See `CONTRIBUTING.md` for guidelines.
+Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines and
+our [Code of Conduct](./CODE_OF_CONDUCT.md). Release history is in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
