@@ -5,8 +5,17 @@ Thank you for your interest in contributing to Tracelet!
 ## Development Setup
 
 1. Clone the repository
-2. Build the CLI: `go build -o tracelet ./cmd/tracelet`
-3. Run tests: `go test ./tests/integration -v`
+2. Install JS deps (also installs the pre-commit hook): `npm install --legacy-peer-deps`
+3. Build the CLI: `go build -o tracelet ./cmd/tracelet`
+4. Run tests: `go test ./...`
+
+A [Husky](https://typicode.github.io/husky/) pre-commit hook runs `gofmt`, Prettier,
+`go vet`, and `golangci-lint` (if installed) before each commit — the same checks CI
+enforces. Install golangci-lint locally with:
+
+```bash
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+```
 
 ## Project Structure
 
@@ -63,8 +72,8 @@ docs: update config reference
 
 ## Code Style
 
-- Go: Follow standard `gofmt` style
-- TypeScript: Use default VS Code settings
+- Go: `gofmt` + `golangci-lint` (config in `.golangci.yml`)
+- JS/TS: Prettier — run `npm run format` (checked with `npm run format:check`)
 - Comments: Document public APIs
 
 ## Questions?

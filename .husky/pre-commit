@@ -1,0 +1,25 @@
+# Fast checks that most often break CI. Full test suite runs in CI, not here.
+
+# gofmt
+unformatted=$(gofmt -l ./cmd ./internal ./tests)
+if [ -n "$unformatted" ]; then
+  echo "✗ gofmt: these files need formatting (run: gofmt -w ./cmd ./internal ./tests)"
+  echo "$unformatted"
+  exit 1
+fi
+
+# Prettier
+npm run format:check || {
+  echo "✗ prettier: run 'npm run format'"
+  exit 1
+}
+
+# go vet
+go vet ./... || exit 1
+
+# golangci-lint (skip gracefully if not installed locally — CI still enforces it)
+if command -v golangci-lint >/dev/null 2>&1; then
+  golangci-lint run ./... || exit 1
+else
+  echo "• golangci-lint not installed locally — skipping (CI enforces it)"
+fi

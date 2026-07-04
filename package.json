@@ -16,12 +16,14 @@
     "publish:all": "node scripts/publish-all.js",
     "publish:dry": "node scripts/publish-all.js --dry-run",
     "format": "prettier --write \"{adapters,packages,scripts,examples}/**/*.{js,cjs,mjs,json}\" \"ui/vscode-extension/src/**/*.ts\" \"*.json\"",
-    "format:check": "prettier --check \"{adapters,packages,scripts,examples}/**/*.{js,cjs,mjs,json}\" \"ui/vscode-extension/src/**/*.ts\" \"*.json\""
+    "format:check": "prettier --check \"{adapters,packages,scripts,examples}/**/*.{js,cjs,mjs,json}\" \"ui/vscode-extension/src/**/*.ts\" \"*.json\"",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "prettier": "^3.6.2"
   },
   "workspaces": [
