@@ -8,6 +8,19 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 let statusBarItem: vscode.StatusBarItem;
 let debounceTimer: NodeJS.Timeout | undefined;
 
+// Shapes of the JSON emitted by `tracelet lint --format json`.
+interface LintResult {
+  ruleId?: string;
+  level?: string;
+  detail?: string;
+}
+interface RouteStat {
+  jsGzipBytes?: number;
+}
+interface LintStats {
+  routes?: RouteStat[];
+}
+
 class TraceletCodeActionProvider implements vscode.CodeActionProvider {
   provideCodeActions(
     document: vscode.TextDocument,
@@ -244,10 +257,11 @@ async function lintDocument(doc: vscode.TextDocument) {
 
     // Clear diagnostics if command failed
     diagnosticCollection.set(doc.uri, []);
-  } catch (e: any) {
+  } catch (e: unknown) {
     // Log errors for debugging
-    const errMsg = e.message || String(e);
-    const stderr = e.stderr ? e.stderr.toString() : '';
+    const err = e as { message?: string; stderr?: Buffer };
+    const errMsg = err.message || String(e);
+    const stderr = err.stderr ? err.stderr.toString() : '';
     console.log('[tracelet] lint error:', errMsg);
     if (stderr) {
       console.log('[tracelet] stderr:', stderr);
@@ -262,7 +276,7 @@ async function lintDocument(doc: vscode.TextDocument) {
   }
 }
 
-function updateDiagnostics(doc: vscode.TextDocument, results: any[]) {
+function updateDiagnostics(doc: vscode.TextDocument, results: LintResult[]) {
   const diagnostics: vscode.Diagnostic[] = [];
 
   for (const r of results) {
@@ -312,14 +326,16 @@ function updateDiagnostics(doc: vscode.TextDocument, results: any[]) {
   diagnosticCollection.set(doc.uri, diagnostics);
 }
 
-function updateStatusBar(stats: any) {
+function updateStatusBar(stats: LintStats) {
   if (!stats || !stats.routes) {
     statusBarItem.hide();
     return;
   }
 
   let totalBytes = 0;
-  let overCount = 0;
+  // ponytail: always 0 today — the status bar never surfaces an over-budget
+  // count; wire this to real budget comparison if/when the extension loads config.
+  const overCount = 0;
   for (const r of stats.routes) {
     totalBytes += r.jsGzipBytes || 0;
   }
@@ -370,8 +386,9 @@ async function probeRoute(url: string) {
         vscode.window.showInformationMessage(`Tracelet Probe: ${msg}`);
       }
     );
-  } catch (e: any) {
-    vscode.window.showErrorMessage(`Probe failed: ${e.message}`);
+  } catch (e: unknown) {
+    const err = e as { message?: string };
+    vscode.window.showErrorMessage(`Probe failed: ${err.message ?? String(e)}`);
   }
 }
 

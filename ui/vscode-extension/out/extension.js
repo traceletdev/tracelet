@@ -197,8 +197,9 @@ async function lintDocument(doc) {
     }
     catch (e) {
         // Log errors for debugging
-        const errMsg = e.message || String(e);
-        const stderr = e.stderr ? e.stderr.toString() : '';
+        const err = e;
+        const errMsg = err.message || String(e);
+        const stderr = err.stderr ? err.stderr.toString() : '';
         console.log('[tracelet] lint error:', errMsg);
         if (stderr) {
             console.log('[tracelet] stderr:', stderr);
@@ -260,7 +261,9 @@ function updateStatusBar(stats) {
         return;
     }
     let totalBytes = 0;
-    let overCount = 0;
+    // ponytail: always 0 today — the status bar never surfaces an over-budget
+    // count; wire this to real budget comparison if/when the extension loads config.
+    const overCount = 0;
     for (const r of stats.routes) {
         totalBytes += r.jsGzipBytes || 0;
     }
@@ -297,7 +300,8 @@ async function probeRoute(url) {
         });
     }
     catch (e) {
-        vscode.window.showErrorMessage(`Probe failed: ${e.message}`);
+        const err = e;
+        vscode.window.showErrorMessage(`Probe failed: ${err.message ?? String(e)}`);
     }
 }
 function getBinaryPath() {

@@ -83,7 +83,7 @@ function collectRoutes(projectRoot) {
     if (!k.endsWith('/page')) return null;
     let r = k.replace(/\/page$/, '') || '/';
     // Drop segment groups like '(routes)'
-    r = r.replace(/\([^\)]+\)\//g, '/');
+    r = r.replace(/\([^)]+\)\//g, '/');
     return r;
   }
 

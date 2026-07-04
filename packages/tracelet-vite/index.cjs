@@ -4,15 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-function writeStats(routes, outDir) {
+function writeStats(routes, _outDir) {
   const outPath = path.join(process.cwd(), '.tracelet', 'stats.json');
   try {
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, JSON.stringify({ routes }, null, 2));
-    // eslint-disable-next-line no-console
+
     console.log(`[tracelet] wrote stats to ${path.relative(process.cwd(), outPath)}`);
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[tracelet] failed to write stats:', e.message);
   }
 }

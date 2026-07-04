@@ -10,8 +10,8 @@ Thank you for your interest in contributing to Tracelet!
 4. Run tests: `go test ./...`
 
 A [Husky](https://typicode.github.io/husky/) pre-commit hook runs `gofmt`, Prettier,
-`go vet`, and `golangci-lint` (if installed) before each commit — the same checks CI
-enforces. Install golangci-lint locally with:
+ESLint, `go vet`, and `golangci-lint` (if installed) before each commit — the same checks
+CI enforces. Install golangci-lint locally with:
 
 ```bash
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
@@ -73,7 +73,7 @@ docs: update config reference
 ## Code Style
 
 - Go: `gofmt` + `golangci-lint` (config in `.golangci.yml`)
-- JS/TS: Prettier — run `npm run format` (checked with `npm run format:check`)
+- JS/TS: ESLint (`npm run lint` / `lint:fix`) + Prettier (`npm run format` / `format:check`)
 - Comments: Document public APIs
 
 ## Questions?

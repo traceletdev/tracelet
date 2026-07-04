@@ -9,6 +9,11 @@ linters:
     - unused
     - misspell
     - unconvert
+  exclusions:
+    paths:
+      # Third-party JS deps sometimes ship stray .go files; the go tool skips
+      # node_modules but golangci-lint doesn't.
+      - node_modules
   settings:
     errcheck:
       # Writes to stdout / HTTP responses and deferred Close() are intentionally
