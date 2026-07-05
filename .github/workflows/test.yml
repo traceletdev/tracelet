@@ -10,11 +10,11 @@ jobs:
     name: Lint & format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.24'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Install dependencies
@@ -38,17 +38,15 @@ jobs:
           version: v2.12.2
 
   test:
-    name: Test (Go ${{ matrix.go-version }})
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go-version }}
-      - uses: actions/setup-node@v4
+          # Matches the minimum version declared in go.mod.
+          go-version: '1.24'
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Install dependencies
