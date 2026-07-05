@@ -7,7 +7,7 @@ Tracelet provides both CLI and programmatic APIs.
 Install via npm:
 
 ```bash
-npm install -D tracelet
+npm install -D @traceletdev/cli
 ```
 
 Or use `npx` without installation:
@@ -29,6 +29,7 @@ npx tracelet init
 ```
 
 Creates:
+
 - `tracelet.config.json` - Default configuration
 - `.tracelet/` - Directory for stats and baselines
 - `.tracelet/.gitkeep` - Ensures directory is tracked
@@ -55,6 +56,7 @@ npx tracelet lint --ci
 ```
 
 **Flags:**
+
 - `--format` (`table`|`json`) - Output format (default: `table`)
 - `--scope` (`all`|`changed`) - Lint scope (default: `all`)
 - `--file <path>` - Target file for focused lint
@@ -63,11 +65,13 @@ npx tracelet lint --ci
 - `--ci` - CI mode (non-zero exit on warnings)
 
 **Exit Codes:**
+
 - `0` - Success (or warnings only in non-CI mode)
 - `1` - Warnings present (CI mode only)
 - `2` - Errors present
 
 **Output Example:**
+
 ```
 Route        JS(gzip)  Verdict
 /            9KB       ✅
@@ -99,12 +103,14 @@ npx tracelet probe http://localhost:3000 --runs 3 --verbose
 ```
 
 **Flags:**
+
 - `--profile` (`desktop`|`mobile`) - Throttling profile (default: `desktop`)
 - `--runs <number>` - Number of runs to average (default: 1)
 - `--out <path>` - Write JSON to file
 - `--verbose` - Log each run and include samples in JSON
 
 **Metrics Collected:**
+
 - `ttfb` - Time to First Byte (ms)
 - `fcp` - First Contentful Paint (ms)
 - `lcp` - Largest Contentful Paint (ms)
@@ -113,6 +119,7 @@ npx tracelet probe http://localhost:3000 --runs 3 --verbose
 - `fsi` - First Script Idle (ms)
 
 **JSON Output:**
+
 ```json
 {
   "url": "http://localhost:3000",
@@ -147,12 +154,14 @@ npx tracelet ci --compare .tracelet/baseline.json --format markdown
 ```
 
 **Flags:**
+
 - `--compare <path>` - Path to baseline JSON to compare against
 - `--write-baseline <path>` - Write current results to baseline file
 - `--format` (`markdown`|`json`) - Output format (default: `markdown`)
 - `--config <path>` - Path to config file
 
 **Exit Codes:**
+
 - `0` - All checks passed
 - `2` - Errors found
 
@@ -172,12 +181,14 @@ npx tracelet hud --config tracelet.config.json
 ```
 
 **Usage:**
-1. Install tracelet: `npm install -D tracelet`
+
+1. Install tracelet: `npm install -D @traceletdev/cli`
 2. Start HUD server: `npx tracelet hud`
 3. Inject script in your app: `<script src="http://localhost:3111/overlay.js"></script>`
 4. See live performance feedback in browser
 
 The HUD displays:
+
 - Route statistics with budget status
 - Real-time lint results
 - Visual indicators (✓/⚠️/❌) for each route
@@ -198,6 +209,7 @@ npx tracelet fix --apply
 ```
 
 Currently a placeholder. Future versions will support automatic fixes for:
+
 - Adding `loading="lazy"` to images
 - Adding `font-display: swap` to fonts
 
@@ -319,13 +331,14 @@ See `.github/workflows/tracelet.yml` for example usage.
 See `ui/vscode-extension/README.md` for extension development.
 
 Extension exposes:
+
 - `tracelet.lintChanged` - Command to lint current file
 - `tracelet.probeCurrentRoute` - Command to probe a URL
 - `tracelet.openConfig` - Command to open config file
 
 Settings:
+
 - `tracelet.binaryPath` - Path to tracelet binary
 - `tracelet.debounceMs` - Lint debounce delay
 - `tracelet.enableOnType` - Enable linting on type
 - `tracelet.probe.profile` - Default probe profile
-

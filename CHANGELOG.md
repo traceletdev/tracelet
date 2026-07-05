@@ -16,14 +16,19 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 - Per-instance render counts in the HUD Components tab (instance count and hottest
   single instance) plus a Reset button.
 - `hud` config section (`enabled`, `port`).
-- `tracelet-react` package wired into the publish pipeline.
-- Go unit tests for config, lint rules, and CI baseline; CI lint/format/vet gates
-  and a Go version matrix.
+- `@traceletdev/react` package wired into the publish pipeline.
+- Go unit tests for config, lint rules, and CI baseline; CI lint/format/vet gates.
 
 ### Fixed
 
 - HUD instrumentation no longer over-counts bailed-out fibers or leaks minified
   third-party component names; unmounted components are dropped from the list.
+
+### Changed
+
+- All npm packages moved under the `@traceletdev` scope: `tracelet` → `@traceletdev/cli`,
+  `tracelet-next` → `@traceletdev/next`, `tracelet-vite` → `@traceletdev/vite`,
+  `tracelet-react` → `@traceletdev/react`. The `tracelet` CLI command is unaffected.
 
 ## [0.5.0]
 

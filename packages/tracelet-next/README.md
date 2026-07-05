@@ -1,11 +1,11 @@
-# tracelet-next
+# @traceletdev/next
 
 Tracelet plugin for Next.js projects.
 
 ## Installation
 
 ```bash
-npm install -D tracelet tracelet-next
+npm install -D @traceletdev/cli @traceletdev/next
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ After installing, add a postbuild script to your `package.json`:
 ```json
 {
   "scripts": {
-    "postbuild": "node node_modules/tracelet-next/collect.js"
+    "postbuild": "node node_modules/@traceletdev/next/collect.js"
   }
 }
 ```
@@ -24,7 +24,7 @@ Or run manually after building:
 
 ```bash
 npm run build
-node node_modules/tracelet-next/collect.js
+node node_modules/@traceletdev/next/collect.js
 ```
 
 This will generate `.tracelet/stats.json` which is used by `tracelet lint` to check performance budgets.

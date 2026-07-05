@@ -26,7 +26,7 @@ git push -u origin main
 
 ### NPM Token
 
-1. Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
+1. Go to <https://www.npmjs.com/settings/YOUR_USERNAME/tokens>
 2. Click "Generate New Token"
 3. Select "Automation" type
 4. Copy the token
@@ -47,6 +47,7 @@ git push origin v0.5.0
 ```
 
 The release workflow will automatically:
+
 - Build binaries for all platforms
 - Package them for npm
 - Publish to npm registry
@@ -57,15 +58,15 @@ The release workflow will automatically:
 Check that packages were published:
 
 ```bash
-npm view tracelet
-npm view tracelet-next
-npm view tracelet-vite
+npm view @traceletdev/cli
+npm view @traceletdev/next
+npm view @traceletdev/vite
 ```
 
 Test installation:
 
 ```bash
-npm install -D tracelet@latest tracelet-next@latest
+npm install -D @traceletdev/cli@latest @traceletdev/next@latest
 npx tracelet --version
 ```
 
@@ -81,4 +82,3 @@ npx tracelet --version
 - Configure required status checks for PRs
 - Add CODEOWNERS file if needed
 - Set up dependabot for security updates
-

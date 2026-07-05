@@ -1,8 +1,11 @@
 {
-  "name": "tracelet-react",
+  "name": "@traceletdev/react",
   "version": "0.5.0",
   "description": "Runtime instrumentation for React component render tracking",
   "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "index.js",
     "README.md"

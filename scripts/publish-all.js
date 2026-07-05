@@ -6,9 +6,10 @@
  * Publish all packages to npm
  *
  * Ensures version sync across packages and publishes:
- * - tracelet (main package)
- * - packages/tracelet-next
- * - packages/tracelet-vite
+ * - @traceletdev/cli (main package)
+ * - packages/tracelet-next   -> @traceletdev/next
+ * - packages/tracelet-vite   -> @traceletdev/vite
+ * - packages/tracelet-react  -> @traceletdev/react
  *
  * Usage:
  *   node scripts/publish-all.js [version]
@@ -22,10 +23,10 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const packages = [
-  { name: 'tracelet', path: '.' },
-  { name: 'tracelet-next', path: 'packages/tracelet-next' },
-  { name: 'tracelet-vite', path: 'packages/tracelet-vite' },
-  { name: 'tracelet-react', path: 'packages/tracelet-react' },
+  { name: '@traceletdev/cli', path: '.' },
+  { name: '@traceletdev/next', path: 'packages/tracelet-next' },
+  { name: '@traceletdev/vite', path: 'packages/tracelet-vite' },
+  { name: '@traceletdev/react', path: 'packages/tracelet-react' },
 ];
 
 function getVersion(pkgPath) {

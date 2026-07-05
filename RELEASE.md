@@ -6,7 +6,9 @@ This document describes how to release new versions of Tracelet to npm and GitHu
 
 1. **GitHub Token**: Set `GITHUB_TOKEN` (automatically provided in Actions)
 2. **NPM Token**: Set `NPM_TOKEN` in GitHub Secrets
-   - Get token from: https://www.npmjs.com/settings/<username>/tokens
+   - Packages publish under the `@traceletdev` npm org — the token must belong to
+     a member with publish rights on that org.
+   - Get token from: `https://www.npmjs.com/settings/<username>/tokens`
    - Create token with "Automation" type
    - Add to GitHub: Settings → Secrets → Actions → New repository secret
 
@@ -15,6 +17,7 @@ This document describes how to release new versions of Tracelet to npm and GitHu
 ### 1. Update Version
 
 Update version in all `package.json` files:
+
 - `package.json`
 - `packages/tracelet-next/package.json`
 - `packages/tracelet-vite/package.json`
@@ -44,10 +47,10 @@ The GitHub Actions workflow will:
 2. **Package binaries** into npm structure using `pack-binaries.js`
 
 3. **Publish to npm**:
-   - `tracelet` (main package)
-   - `tracelet-next` (Next.js plugin)
-   - `tracelet-vite` (Vite plugin)
-   - `tracelet-react` (React render instrumentation)
+   - `@traceletdev/cli` (main package)
+   - `@traceletdev/next` (Next.js plugin)
+   - `@traceletdev/vite` (Vite plugin)
+   - `@traceletdev/react` (React render instrumentation)
 
 4. **Create GitHub Release** with binaries attached
 
@@ -55,13 +58,13 @@ The GitHub Actions workflow will:
 
 ```bash
 # Check npm packages were published
-npm view tracelet version
-npm view tracelet-next version
-npm view tracelet-vite version
-npm view tracelet-react version
+npm view @traceletdev/cli version
+npm view @traceletdev/next version
+npm view @traceletdev/vite version
+npm view @traceletdev/react version
 
 # Test installation
-npm install -D tracelet@latest tracelet-next@latest
+npm install -D @traceletdev/cli@latest @traceletdev/next@latest
 npx tracelet --version
 ```
 
@@ -70,6 +73,7 @@ npx tracelet --version
 The extension is published separately (not part of the tag-triggered workflow).
 
 Prerequisites:
+
 - A Marketplace publisher matching `publisher` in `ui/vscode-extension/package.json`
   (currently `traceletdev` — update if your publisher ID differs).
 - A Personal Access Token: `vsce login <publisher>` or `VSCE_PAT` env var.
@@ -104,6 +108,7 @@ node scripts/publish-all.js 0.5.0              # update versions
 npm publish
 npm publish --workspace=packages/tracelet-next
 npm publish --workspace=packages/tracelet-vite
+npm publish --workspace=packages/tracelet-react
 ```
 
 ## Version Format
@@ -115,6 +120,7 @@ Use semantic versioning: `MAJOR.MINOR.PATCH`
 - `PATCH`: Bug fixes, backwards compatible
 
 Examples:
+
 - `0.5.0` - Initial npm release
 - `0.5.1` - Bug fix
 - `0.6.0` - New features
@@ -139,4 +145,3 @@ Examples:
 - Check npm token has publish permissions
 - Verify package names aren't taken on npm
 - Ensure version numbers are incremented
-

@@ -1,11 +1,14 @@
 {
-  "name": "tracelet",
+  "name": "@traceletdev/cli",
   "version": "0.5.0",
   "description": "Performance toolkit that brings Lighthouse-level insight and ESLint-level ergonomics",
   "type": "commonjs",
   "main": "bin/tracelet.js",
   "bin": {
     "tracelet": "./bin/tracelet.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "postinstall": "node scripts/postinstall.js",

@@ -20,11 +20,11 @@ Tracelet is a modern performance toolkit that brings **Lighthouse-level insight*
 
 ```bash
 # Install tracelet CLI
-npm install -D tracelet
+npm install -D @traceletdev/cli
 
 # Install framework plugin (choose one)
-npm install -D tracelet-next    # for Next.js
-npm install -D tracelet-vite      # for Vite
+npm install -D @traceletdev/next    # for Next.js
+npm install -D @traceletdev/vite    # for Vite
 
 # Initialize config
 npx tracelet init
@@ -57,6 +57,7 @@ go build -o tracelet ./cmd/tracelet
 ## What's Included
 
 ### 📋 Lint
+
 Performance budgets as code. Enforce route-level JavaScript limits with ESLint-style rules.
 
 ```bash
@@ -67,6 +68,7 @@ tracelet lint
 ```
 
 ### 🔍 Probe
+
 Chrome-based performance audits in 2-3 seconds. Collect TTFB, FCP, LCP, CLS, TBT-Lite, FSI.
 
 ```bash
@@ -74,6 +76,7 @@ tracelet probe http://localhost:3000 --profile mobile
 ```
 
 ### 🖥️ HUD
+
 Real-time overlay for development. See live performance feedback in your browser.
 
 ```bash
@@ -89,9 +92,10 @@ add this to `<head>`, before your app bundle:
 <script src="http://localhost:3111/hook.js"></script>
 ```
 
-See [`tracelet-react`](./packages/tracelet-react/README.md) for the bundled-app (`import`) setup.
+See [`@traceletdev/react`](./packages/tracelet-react/README.md) for the bundled-app (`import`) setup.
 
 ### 🔄 CI
+
 Automated checks with baseline comparison. GitHub Action ready.
 
 ```bash
@@ -99,6 +103,7 @@ tracelet ci --compare .tracelet/baseline.json --format markdown
 ```
 
 ### 📝 VS Code
+
 In-editor diagnostics with quick fixes. See issues as you code.
 
 Install the extension and get instant feedback on save.
@@ -116,26 +121,30 @@ Install the extension and get instant feedback on save.
 ### Next.js
 
 1. Install packages:
+
    ```bash
-   npm install -D tracelet tracelet-next
+   npm install -D @traceletdev/cli @traceletdev/next
    ```
 
 2. Add postbuild script to `package.json`:
+
    ```json
    {
      "scripts": {
-       "postbuild": "node node_modules/tracelet-next/collect.js"
+       "postbuild": "node node_modules/@traceletdev/next/collect.js"
      }
    }
    ```
 
 3. Build your app:
+
    ```bash
    npm run build
    # Stats automatically collected
    ```
 
 4. Lint with tracelet:
+
    ```bash
    npx tracelet lint
    ```
@@ -143,14 +152,16 @@ Install the extension and get instant feedback on save.
 ### Vite
 
 1. Install packages:
+
    ```bash
-   npm install -D tracelet tracelet-vite
+   npm install -D @traceletdev/cli @traceletdev/vite
    ```
 
 2. Add plugin to `vite.config.js`:
+
    ```js
    import { defineConfig } from 'vite';
-   import tracelet from 'tracelet-vite';
+   import tracelet from '@traceletdev/vite';
 
    export default defineConfig({
      plugins: [
@@ -161,12 +172,14 @@ Install the extension and get instant feedback on save.
    ```
 
 3. Build your app:
+
    ```bash
    npm run build
    # Stats automatically collected during build
    ```
 
 4. Lint with tracelet:
+
    ```bash
    npx tracelet lint
    ```
@@ -174,6 +187,7 @@ Install the extension and get instant feedback on save.
 ## Adapters (Legacy)
 
 For projects not using npm packages, see adapter files in `adapters/` directory:
+
 - **Next.js** - `node adapters/next-collect.js` after build
 - **Vite** - Use `adapters/vite-plugin-tracelet.cjs` in `vite.config.js`
 
@@ -228,4 +242,3 @@ our [Code of Conduct](./CODE_OF_CONDUCT.md). Release history is in
 ---
 
 **Tracelet** — performance you can lint.
-

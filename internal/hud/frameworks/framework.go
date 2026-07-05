@@ -43,7 +43,7 @@ func (r *ReactInstrumentation) Detect() bool {
 }
 
 // Install returns the canonical instrumentation from react.js (the same code
-// shipped as the tracelet-react npm package).
+// shipped as the @traceletdev/react npm package).
 func (r *ReactInstrumentation) Install() string {
 	return reactInstrumentationJS
 }
