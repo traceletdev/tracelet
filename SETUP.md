@@ -22,19 +22,12 @@ git branch -M main
 git push -u origin main
 ```
 
-## 2. Set Up GitHub Secrets
+## 2. Set Up npm Publishing
 
-### NPM Token
-
-1. Go to <https://www.npmjs.com/settings/YOUR_USERNAME/tokens>
-2. Click "Generate New Token"
-3. Select "Automation" type
-4. Copy the token
-5. In GitHub repo: Settings → Secrets and variables → Actions
-6. Click "New repository secret"
-7. Name: `NPM_TOKEN`
-8. Value: paste your npm token
-9. Click "Add secret"
+`release.yml` publishes via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)
+(OIDC) — no `NPM_TOKEN` secret to create. See **RELEASE.md → Prerequisites** for the
+per-package Trusted Publisher setup on npmjs.com (including the bootstrap step needed
+before any package has been published for the first time).
 
 ## 3. Create First Release
 

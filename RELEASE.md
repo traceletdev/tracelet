@@ -5,12 +5,27 @@ This document describes how to release new versions of Tracelet to npm and GitHu
 ## Prerequisites
 
 1. **GitHub Token**: Set `GITHUB_TOKEN` (automatically provided in Actions)
-2. **NPM Token**: Set `NPM_TOKEN` in GitHub Secrets
-   - Packages publish under the `@traceletdev` npm org — the token must belong to
-     a member with publish rights on that org.
-   - Get token from: `https://www.npmjs.com/settings/<username>/tokens`
-   - Create token with "Automation" type
-   - Add to GitHub: Settings → Secrets → Actions → New repository secret
+2. **npm publishing: Trusted Publishing (OIDC), not a token**. `release.yml` publishes
+   via [npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers/) — no
+   `NPM_TOKEN` secret is used. This needs one-time setup **per package**, done on
+   npmjs.com by someone with publish rights on the `@traceletdev` org:
+
+   - Go to the package's Settings → **Trusted Publisher** and add:
+     - Provider: **GitHub Actions**
+     - Organization/repo: `traceletdev/tracelet`
+     - Workflow filename: `release.yml` (exact, case-sensitive)
+     - Environment: leave blank (this workflow doesn't use one)
+     - Allowed actions: `npm publish`
+
+   **Bootstrap caveat:** as of writing, none of `@traceletdev/cli`, `@traceletdev/next`,
+   `@traceletdev/vite`, `@traceletdev/react` have ever been published, and npm's docs
+   don't confirm whether a Trusted Publisher can be registered for a name before its
+   first publish. If the package settings page isn't reachable for an unpublished name:
+   1. Publish v0.5.0 of each package manually once, from a local machine logged in
+      (`npm login`) as a `@traceletdev` org member with publish rights —
+      `node scripts/publish-all.js 0.5.0` (see "Manual Release" below).
+   2. *Then* configure the Trusted Publisher for each now-existing package.
+   3. All subsequent releases go through `release.yml`'s OIDC flow with no token.
 
 ## Release Process
 
@@ -130,7 +145,8 @@ Examples:
 
 ### Release workflow fails
 
-- Check that `NPM_TOKEN` is set in GitHub Secrets
+- Check that a Trusted Publisher is configured for each package (repo + `release.yml`
+  must match exactly — see Prerequisites above)
 - Verify Go version in workflow matches `go.mod`
 - Check that binaries were built successfully in GoReleaser step
 
@@ -142,6 +158,6 @@ Examples:
 
 ### npm publish fails
 
-- Check npm token has publish permissions
-- Verify package names aren't taken on npm
+- CI: check the Trusted Publisher config matches this repo/workflow exactly
+- Manual: check your local npm login has publish rights on the `@traceletdev` org
 - Ensure version numbers are incremented

@@ -34,12 +34,12 @@ Runs on: Tag push (e.g., `v0.5.0`)
   - `@traceletdev/react` (React render instrumentation)
 - Creates GitHub release with binaries
 
-## Required Secrets
+## npm Publishing
 
-- `NPM_TOKEN` - npm automation token for publishing packages
-  - Get from: <https://www.npmjs.com/settings/YOUR_USERNAME/tokens>
-  - Type: Automation
-  - Add to: Repository Settings → Secrets → Actions
+Authenticates via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)
+(OIDC) — no secret required. Each of the 4 packages needs a Trusted Publisher configured
+on npmjs.com pointing at this repo and `release.yml`. See `RELEASE.md` for setup
+(including the bootstrap step for packages that have never been published).
 
 ## Release Process
 

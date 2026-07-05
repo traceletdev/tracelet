@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -69,14 +69,15 @@ jobs:
             });
           "
 
+      # Authenticates via npm Trusted Publishing (OIDC) — no NPM_TOKEN needed.
+      # Requires a Trusted Publisher configured on each package at npmjs.com
+      # (repo: traceletdev/tracelet, workflow: release.yml) — see RELEASE.md.
       - name: Publish to npm
         run: |
           cd packages/tracelet-next && npm publish --access public
           cd ../tracelet-vite && npm publish --access public
           cd ../tracelet-react && npm publish --access public
           cd ../.. && npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: .
 
       - name: Create GitHub Release
