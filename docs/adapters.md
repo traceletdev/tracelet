@@ -35,7 +35,7 @@ npm install -D @traceletdev/vite
    ```json
    {
      "scripts": {
-       "postbuild": "node node_modules/@traceletdev/next/collect.js"
+       "postbuild": "tracelet-next collect"
      }
    }
    ```
@@ -204,7 +204,7 @@ You can trigger collection manually:
 
 ```bash
 # Next.js
-node node_modules/@traceletdev/next/collect.js
+npx tracelet-next collect
 
 # Or programmatically
 node -e "require('@traceletdev/next')()"
@@ -220,7 +220,7 @@ In CI pipelines, ensure adapters run after builds:
   run: npm run build
 
 - name: Collect Tracelet stats
-  run: node node_modules/@traceletdev/next/collect.js
+  run: npx tracelet-next collect
 
 - name: Run Tracelet lint
   run: npx tracelet lint

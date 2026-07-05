@@ -4,8 +4,8 @@
   "description": "Tracelet plugin for Next.js - automatically collects route statistics after builds",
   "type": "commonjs",
   "main": "index.js",
-  "scripts": {
-    "postinstall": "node collect.js"
+  "bin": {
+    "tracelet-next": "./cli.js"
   },
   "publishConfig": {
     "access": "public"
@@ -29,6 +29,7 @@
   },
   "files": [
     "index.js",
+    "cli.js",
     "collect.js",
     "README.md"
   ]

@@ -56,7 +56,7 @@ This creates `tracelet.config.json` and `.tracelet/` directory.
 // package.json
 {
   "scripts": {
-    "postbuild": "node node_modules/@traceletdev/next/collect.js"
+    "postbuild": "tracelet-next collect"
   }
 }
 ```

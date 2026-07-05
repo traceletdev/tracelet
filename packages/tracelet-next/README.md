@@ -15,7 +15,7 @@ After installing, add a postbuild script to your `package.json`:
 ```json
 {
   "scripts": {
-    "postbuild": "node node_modules/@traceletdev/next/collect.js"
+    "postbuild": "tracelet-next collect"
   }
 }
 ```
@@ -24,7 +24,7 @@ Or run manually after building:
 
 ```bash
 npm run build
-node node_modules/@traceletdev/next/collect.js
+npx tracelet-next collect
 ```
 
 This will generate `.tracelet/stats.json` which is used by `tracelet lint` to check performance budgets.
