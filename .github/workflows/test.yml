@@ -38,16 +38,14 @@ jobs:
           version: v2.12.2
 
   test:
-    name: Test (Go ${{ matrix.go-version }})
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          # Matches the minimum version declared in go.mod.
+          go-version: '1.24'
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
