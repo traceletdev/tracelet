@@ -5,11 +5,13 @@
 /**
  * Publish all packages to npm
  *
- * Ensures version sync across packages and publishes:
- * - @traceletdev/cli (main package)
+ * Ensures version sync across packages and publishes, platform binary packages
+ * first (so @traceletdev/cli's optionalDependencies resolve once it publishes):
+ * - packages/cli-<platform>  -> @traceletdev/cli-<platform>  (x6, binary-only)
  * - packages/tracelet-next   -> @traceletdev/next
  * - packages/tracelet-vite   -> @traceletdev/vite
  * - packages/tracelet-react  -> @traceletdev/react
+ * - @traceletdev/cli (main package, last)
  *
  * Usage:
  *   node scripts/publish-all.js [version]
@@ -22,11 +24,21 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const platformDirs = [
+  'cli-darwin-arm64',
+  'cli-darwin-x64',
+  'cli-linux-arm64',
+  'cli-linux-x64',
+  'cli-win32-arm64',
+  'cli-win32-x64',
+];
+
 const packages = [
-  { name: '@traceletdev/cli', path: '.' },
+  ...platformDirs.map(dir => ({ name: `@traceletdev/${dir}`, path: `packages/${dir}` })),
   { name: '@traceletdev/next', path: 'packages/tracelet-next' },
   { name: '@traceletdev/vite', path: 'packages/tracelet-vite' },
   { name: '@traceletdev/react', path: 'packages/tracelet-react' },
+  { name: '@traceletdev/cli', path: '.' },
 ];
 
 function getVersion(pkgPath) {
@@ -63,11 +75,16 @@ function main() {
   const dryRun = args.includes('--dry-run');
   let newVersion = args.find(arg => !arg.startsWith('--'));
 
-  // Check if binaries are built
-  const binariesDir = path.join(process.cwd(), 'binaries');
-  if (!fs.existsSync(binariesDir)) {
-    console.warn('⚠ binaries/ directory not found. Run "npm run pack:bin" first.');
-    console.warn('⚠ Publishing without binaries will result in broken package.');
+  // Check that binaries were packed into every platform package before publishing.
+  const missingBinaries = platformDirs.filter(dir => {
+    const binDir = path.join(process.cwd(), 'packages', dir, 'bin');
+    return !fs.existsSync(binDir) || fs.readdirSync(binDir).length === 0;
+  });
+  if (missingBinaries.length > 0) {
+    console.warn(
+      `⚠ No binary packed for: ${missingBinaries.join(', ')}. Run "npm run pack:bin" first.`
+    );
+    console.warn('⚠ Publishing without binaries will result in broken platform packages.');
     if (!dryRun) {
       console.error('✗ Aborting publish. Build binaries first.');
       process.exit(1);

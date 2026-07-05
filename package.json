@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/cli",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Performance toolkit that brings Lighthouse-level insight and ESLint-level ergonomics",
   "type": "commonjs",
   "main": "bin/tracelet.js",
@@ -10,8 +10,15 @@
   "publishConfig": {
     "access": "public"
   },
+  "optionalDependencies": {
+    "@traceletdev/cli-darwin-arm64": "0.5.1",
+    "@traceletdev/cli-darwin-x64": "0.5.1",
+    "@traceletdev/cli-linux-arm64": "0.5.1",
+    "@traceletdev/cli-linux-x64": "0.5.1",
+    "@traceletdev/cli-win32-arm64": "0.5.1",
+    "@traceletdev/cli-win32-x64": "0.5.1"
+  },
   "scripts": {
-    "postinstall": "node scripts/postinstall.js",
     "build:bin": "echo 'Run: goreleaser release --snapshot to build binaries, or use go build'",
     "pack:bin": "node scripts/pack-binaries.js",
     "prepare:publish": "npm run pack:bin && npm run test:packages",
@@ -38,7 +45,8 @@
     "typescript-eslint": "^8.62.1"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "!packages/cli-*"
   ],
   "keywords": [
     "performance",
@@ -57,8 +65,6 @@
   },
   "files": [
     "bin/",
-    "binaries/",
-    "scripts/",
     "README.md",
     "LICENSE",
     "package.json"

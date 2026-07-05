@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Pack Go binaries into npm package structure
+ * Pack Go binaries into the per-platform npm packages.
  *
  * Expects binaries to be built and placed in dist/ directory
  * (by GoReleaser or manual build)
@@ -20,32 +20,33 @@ const path = require('path');
  *   tracelet_windows_amd64/tracelet.exe
  *   tracelet_windows_arm64/tracelet.exe
  *
- * Output:
- * binaries/
- *   darwin-x64/tracelet
- *   darwin-arm64/tracelet
- *   linux-x64/tracelet
- *   linux-arm64/tracelet
- *   win32-x64/tracelet.exe
- *   win32-arm64/tracelet.exe
+ * Output (one binary per @traceletdev/cli-<platform> package, gated by
+ * os/cpu so npm only ever installs the one matching the current machine):
+ * packages/
+ *   cli-darwin-x64/bin/tracelet
+ *   cli-darwin-arm64/bin/tracelet
+ *   cli-linux-x64/bin/tracelet
+ *   cli-linux-arm64/bin/tracelet
+ *   cli-win32-x64/bin/tracelet.exe
+ *   cli-win32-arm64/bin/tracelet.exe
  */
 
 const distDir = path.join(__dirname, '..', 'dist');
-const binariesDir = path.join(__dirname, '..', 'binaries');
+const packagesDir = path.join(__dirname, '..', 'packages');
 
-// Map from GoReleaser naming to npm naming
+// Map from GoReleaser naming to the platform package directory + binary name
 const platformMap = {
   darwin: {
-    amd64: { dir: 'darwin-x64', name: 'tracelet' },
-    arm64: { dir: 'darwin-arm64', name: 'tracelet' },
+    amd64: { dir: 'cli-darwin-x64', name: 'tracelet' },
+    arm64: { dir: 'cli-darwin-arm64', name: 'tracelet' },
   },
   linux: {
-    amd64: { dir: 'linux-x64', name: 'tracelet' },
-    arm64: { dir: 'linux-arm64', name: 'tracelet' },
+    amd64: { dir: 'cli-linux-x64', name: 'tracelet' },
+    arm64: { dir: 'cli-linux-arm64', name: 'tracelet' },
   },
   windows: {
-    amd64: { dir: 'win32-x64', name: 'tracelet.exe' },
-    arm64: { dir: 'win32-arm64', name: 'tracelet.exe' },
+    amd64: { dir: 'cli-win32-x64', name: 'tracelet.exe' },
+    arm64: { dir: 'cli-win32-arm64', name: 'tracelet.exe' },
   },
 };
 
@@ -53,11 +54,6 @@ function packBinaries() {
   if (!fs.existsSync(distDir)) {
     console.error('dist/ directory not found. Run GoReleaser or build binaries first.');
     process.exit(1);
-  }
-
-  // Create binaries directory structure
-  if (!fs.existsSync(binariesDir)) {
-    fs.mkdirSync(binariesDir, { recursive: true });
   }
 
   let packed = 0;
@@ -88,7 +84,7 @@ function packBinaries() {
 
     const sourceDir = path.join(distDir, dirName);
     const sourceBinary = path.join(sourceDir, mapping.name);
-    const targetDir = path.join(binariesDir, mapping.dir);
+    const targetDir = path.join(packagesDir, mapping.dir, 'bin');
     const targetBinary = path.join(targetDir, mapping.name);
 
     if (!fs.existsSync(sourceBinary)) {
@@ -110,7 +106,7 @@ function packBinaries() {
       fs.chmodSync(targetBinary, '755');
     }
 
-    console.log(`✓ Packed ${goos}/${goarch} → ${mapping.dir}/${mapping.name}`);
+    console.log(`✓ Packed ${goos}/${goarch} → packages/${mapping.dir}/bin/${mapping.name}`);
     packed++;
   }
 
@@ -119,7 +115,7 @@ function packBinaries() {
     process.exit(1);
   }
 
-  console.log(`\n✓ Packed ${packed} binaries to binaries/`);
+  console.log(`\n✓ Packed ${packed} binaries into packages/cli-*/bin/`);
   if (skipped > 0) {
     console.warn(`⚠ Skipped ${skipped} entries`);
   }

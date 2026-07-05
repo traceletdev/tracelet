@@ -54,16 +54,27 @@ jobs:
           node -e "
             const fs = require('fs');
             const version = '${{ steps.version.outputs.version }}';
+            const platformDirs = [
+              'cli-darwin-arm64', 'cli-darwin-x64',
+              'cli-linux-arm64', 'cli-linux-x64',
+              'cli-win32-arm64', 'cli-win32-x64',
+            ];
             const packages = [
               { path: './package.json' },
               { path: './packages/tracelet-next/package.json' },
               { path: './packages/tracelet-vite/package.json' },
-              { path: './packages/tracelet-react/package.json' }
+              { path: './packages/tracelet-react/package.json' },
+              ...platformDirs.map(dir => ({ path: \`./packages/\${dir}/package.json\` })),
             ];
             packages.forEach(({ path }) => {
               if (fs.existsSync(path)) {
                 const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
                 pkg.version = version;
+                if (pkg.optionalDependencies) {
+                  for (const dep of Object.keys(pkg.optionalDependencies)) {
+                    if (dep.startsWith('@traceletdev/cli-')) pkg.optionalDependencies[dep] = version;
+                  }
+                }
                 fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
               }
             });
@@ -72,8 +83,13 @@ jobs:
       # Authenticates via npm Trusted Publishing (OIDC) — no NPM_TOKEN needed.
       # Requires a Trusted Publisher configured on each package at npmjs.com
       # (repo: traceletdev/tracelet, workflow: release.yml) — see RELEASE.md.
+      # Platform binary packages publish first so @traceletdev/cli's
+      # optionalDependencies resolve once it publishes last.
       - name: Publish to npm
         run: |
+          for dir in cli-darwin-arm64 cli-darwin-x64 cli-linux-arm64 cli-linux-x64 cli-win32-arm64 cli-win32-x64; do
+            (cd packages/$dir && npm publish --access public)
+          done
           cd packages/tracelet-next && npm publish --access public
           cd ../tracelet-vite && npm publish --access public
           cd ../tracelet-react && npm publish --access public

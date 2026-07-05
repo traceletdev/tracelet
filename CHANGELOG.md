@@ -9,6 +9,8 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 
 ## [Unreleased]
 
+## [0.5.1]
+
 ### Added
 
 - HUD React re-render tracking that actually works in bundled apps: installs the
@@ -18,11 +20,20 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 - `hud` config section (`enabled`, `port`).
 - `@traceletdev/react` package wired into the publish pipeline.
 - Go unit tests for config, lint rules, and CI baseline; CI lint/format/vet gates.
+- `tracelet-next collect` subcommand, replacing the old direct-`node_modules`-path
+  `postbuild` hack.
+- Per-platform `@traceletdev/cli-<platform>` binary packages (darwin/linux/win32 ×
+  arm64/x64), installed via `optionalDependencies` — a typical `@traceletdev/cli`
+  install is now ~12MB instead of bundling all 6 platforms (~70MB) in one tarball.
 
 ### Fixed
 
 - HUD instrumentation no longer over-counts bailed-out fibers or leaks minified
   third-party component names; unmounted components are dropped from the list.
+- `@traceletdev/next`'s `postinstall` ran stats collection at install time, before
+  any build exists, silently writing an empty `stats.json`. Removed.
+- `require('@traceletdev/next')()` silently did nothing (required the collect module
+  without invoking it). Now runs correctly.
 
 ### Changed
 
@@ -34,5 +45,6 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 
 - Initial public release: lint, probe, HUD, CI, and VS Code extension.
 
-[Unreleased]: https://github.com/traceletdev/tracelet/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/traceletdev/tracelet/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/traceletdev/tracelet/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/traceletdev/tracelet/releases/tag/v0.5.0

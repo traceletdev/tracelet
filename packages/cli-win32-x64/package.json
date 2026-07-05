@@ -1,0 +1,24 @@
+{
+  "name": "@traceletdev/cli-win32-x64",
+  "version": "0.5.1",
+  "description": "tracelet CLI binary for win32/x64. Installed automatically as an optional dependency of @traceletdev/cli — not meant to be installed directly.",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "license": "MIT",
+  "author": "Moiz Imran <moizwasti@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/traceletdev/tracelet.git",
+    "directory": "packages/cli-win32-x64"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin/"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/vite",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Tracelet plugin for Vite - automatically collects route statistics during builds",
   "type": "commonjs",
   "main": "index.cjs",
