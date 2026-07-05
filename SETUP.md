@@ -24,10 +24,7 @@ git push -u origin main
 
 ## 2. Set Up npm Publishing
 
-`release.yml` publishes via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)
-(OIDC) — no `NPM_TOKEN` secret to create. See **RELEASE.md → Prerequisites** for the
-per-package Trusted Publisher setup on npmjs.com (including the bootstrap step needed
-before any package has been published for the first time).
+See **RELEASE.md → Prerequisites** for Trusted Publisher setup on npmjs.com.
 
 ## 3. Create First Release
 
