@@ -278,6 +278,17 @@ Centralized config file `tracelet.config.json`.
 - [ ] Astro adapter (only Next.js + Vite ship today)
 - [ ] `tracelet-lsp` — Phase 2 multi-editor LSP server
 - [ ] All of v1.0.0 (Cloud) below
+- [ ] **Per-platform npm binary packages.** `@traceletdev/cli` currently bundles all 6
+      platform binaries (darwin/linux/win32 × x64/arm64, ~12MB each) in one tarball —
+      37MB packed / 70.5MB unpacked, regardless of the installer's actual platform.
+      Standard fix (used by esbuild, `@swc/core`, Turborepo): split into 6 tiny
+      per-platform packages with `os`/`cpu` fields in each `package.json`, referenced
+      via `optionalDependencies` from `@traceletdev/cli` — npm then installs only the
+      one matching binary (~12MB instead of ~70MB). Requires rewriting
+      `scripts/postinstall.js`/`bin/tracelet.js` to resolve the installed platform
+      package instead of copying from a bundled `binaries/` folder, plus a new publish
+      step per platform package in `release.yml`. Not done for the v0.5.0 bootstrap
+      publish; revisit before the next real release.
 
 ### v1.0.0 — Cloud
 

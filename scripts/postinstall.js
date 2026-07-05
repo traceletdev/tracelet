@@ -5,6 +5,11 @@
 const fs = require('fs');
 const path = require('path');
 
+// ponytail: this copies from all 6 bundled platform binaries, so every install
+// ships ~70MB regardless of platform. Upgrade path: split into per-platform
+// optionalDependencies packages (see Tracelet-Planning.md > Deferred) so npm
+// installs only the matching ~12MB binary.
+
 // Platform detection
 const platform = process.platform;
 const arch = process.arch;
