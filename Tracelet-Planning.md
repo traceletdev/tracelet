@@ -279,6 +279,17 @@ Centralized config file `tracelet.config.json`.
 - [ ] `tracelet-lsp` — Phase 2 multi-editor LSP server
 - [ ] All of v1.0.0 (Cloud) below
 
+### Done since v0.5.0
+
+- [x] **Per-platform npm binary packages** (0.5.1). `@traceletdev/cli` no longer bundles
+      all 6 platform binaries (was 37MB packed / 70.5MB unpacked). Split into 6
+      `@traceletdev/cli-<platform>` packages with `os`/`cpu` fields, referenced via
+      `optionalDependencies` — npm now installs only the one matching binary (~12MB).
+      `bin/tracelet.js` resolves the installed platform package via `require.resolve()`
+      instead of a bundled `binaries/` folder; `scripts/postinstall.js` was deleted
+      entirely (no longer needed). Consequence: 6 new packages need their own Trusted
+      Publisher bootstrap (see RELEASE.md).
+
 ### v1.0.0 — Cloud
 
 - [ ] Baseline sync API

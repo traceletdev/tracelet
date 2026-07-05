@@ -985,7 +985,7 @@ func overlayJS(port int) string {
           var msg = 'No React re-renders tracked yet.';
           msg += '\\n\\nRender tracking needs the tracelet hook to load BEFORE React. Add this to <head>, before your app bundle:';
           msg += '\\n<script src="http://localhost:%d/hook.js"></script>';
-          msg += '\\n\\nOr, in a bundled app, import "tracelet-react" as the first line of your dev entry.';
+          msg += '\\n\\nOr, in a bundled app, import "@traceletdev/react" as the first line of your dev entry.';
           if (debugInfo.length > 0) {
             msg += '\\n\\nStatus: ' + debugInfo.join(', ');
           }

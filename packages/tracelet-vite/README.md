@@ -1,11 +1,11 @@
-# tracelet-vite
+# @traceletdev/vite
 
 Tracelet plugin for Vite projects.
 
 ## Installation
 
 ```bash
-npm install -D tracelet tracelet-vite
+npm install -D @traceletdev/cli @traceletdev/vite
 ```
 
 ## Usage
@@ -14,7 +14,7 @@ Add the plugin to your `vite.config.js`:
 
 ```js
 import { defineConfig } from 'vite';
-import tracelet from 'tracelet-vite';
+import tracelet from '@traceletdev/vite';
 
 export default defineConfig({
   plugins: [

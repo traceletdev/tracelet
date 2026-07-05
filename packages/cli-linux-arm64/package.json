@@ -1,0 +1,24 @@
+{
+  "name": "@traceletdev/cli-linux-arm64",
+  "version": "0.5.1",
+  "description": "tracelet CLI binary for linux/arm64. Installed automatically as an optional dependency of @traceletdev/cli — not meant to be installed directly.",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "license": "MIT",
+  "author": "Moiz Imran <moizwasti@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/traceletdev/tracelet.git",
+    "directory": "packages/cli-linux-arm64"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin/"
+  ]
+}

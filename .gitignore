@@ -5,7 +5,8 @@
 *.so
 *.dylib
 dist/
-binaries/
+# Built by scripts/pack-binaries.js into the per-platform npm packages
+packages/cli-*/bin/
 
 # Node modules
 node_modules/

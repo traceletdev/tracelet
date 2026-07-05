@@ -1,4 +1,4 @@
-# tracelet-react
+# @traceletdev/react
 
 Tracks React component **re-renders** and surfaces them in the Tracelet HUD's Components tab.
 
@@ -9,7 +9,7 @@ that bail out (e.g. wrapped in `React.memo` with unchanged props) are correctly 
 ## Installation
 
 ```bash
-npm install -D tracelet-react
+npm install -D @traceletdev/react
 ```
 
 ## Usage — must load before React
@@ -24,7 +24,7 @@ Import it as the **first line** of your dev entry point:
 ```javascript
 // main.jsx / index.tsx — top of file, before any React import
 if (import.meta.env.DEV) {
-  await import('tracelet-react');
+  await import('@traceletdev/react');
 }
 ```
 
@@ -32,7 +32,7 @@ or with CommonJS:
 
 ```javascript
 if (process.env.NODE_ENV === 'development') {
-  require('tracelet-react');
+  require('@traceletdev/react');
 }
 ```
 
@@ -55,9 +55,13 @@ reliable tracking, use one of the two methods above.
 Exposes `window.__traceletReactInstrumentation`:
 
 ```javascript
-window.__traceletReactInstrumentation.getComponents();   // [{ name, renderCount }, ...]
-window.__traceletReactInstrumentation.getRenderCounts();  // { ComponentName: count, ... }
-window.__traceletReactInstrumentation.reset();            // clear counts
+window.__traceletReactInstrumentation.getComponents();
+// [{ name, renderCount, instances, maxRenders }, ...]
+// renderCount is the total across all instances sharing a name; maxRenders is
+// the hottest single instance — the number worth investigating.
+
+window.__traceletReactInstrumentation.getRenderCounts(); // { ComponentName: totalCount, ... }
+window.__traceletReactInstrumentation.reset(); // zero counts (keeps mount/instance identity)
 ```
 
 Dev only — do not ship to production.

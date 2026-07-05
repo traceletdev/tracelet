@@ -7,17 +7,17 @@ Tracelet integrates with modern frameworks via npm packages that automatically c
 ### Main Package
 
 ```bash
-npm install -D tracelet
+npm install -D @traceletdev/cli
 ```
 
 ### Framework Plugins
 
 ```bash
 # For Next.js
-npm install -D tracelet-next
+npm install -D @traceletdev/next
 
 # For Vite
-npm install -D tracelet-vite
+npm install -D @traceletdev/vite
 ```
 
 ## Next.js Integration
@@ -25,20 +25,23 @@ npm install -D tracelet-vite
 ### Setup
 
 1. Install packages:
+
    ```bash
-   npm install -D tracelet tracelet-next
+   npm install -D @traceletdev/cli @traceletdev/next
    ```
 
 2. Add postbuild script to `package.json`:
+
    ```json
    {
      "scripts": {
-       "postbuild": "node node_modules/tracelet-next/collect.js"
+       "postbuild": "tracelet-next collect"
      }
    }
    ```
 
 3. Build your app:
+
    ```bash
    npm run build
    ```
@@ -47,7 +50,7 @@ npm install -D tracelet-vite
 
 ### How It Works
 
-The `tracelet-next` package provides a script that:
+The `@traceletdev/next` package provides a script that:
 
 - Reads Next.js build manifests (`.next/build-manifest.json`, `.next/app-build-manifest.json`)
 - Detects all routes including:
@@ -63,7 +66,7 @@ The `tracelet-next` package provides a script that:
 You can also call the adapter programmatically:
 
 ```js
-const collect = require('tracelet-next');
+const collect = require('@traceletdev/next');
 collect(); // Collects stats and writes to .tracelet/stats.json
 ```
 
@@ -72,14 +75,16 @@ collect(); // Collects stats and writes to .tracelet/stats.json
 ### Setup
 
 1. Install packages:
+
    ```bash
-   npm install -D tracelet tracelet-vite
+   npm install -D @traceletdev/cli @traceletdev/vite
    ```
 
 2. Add plugin to `vite.config.js`:
+
    ```js
    import { defineConfig } from 'vite';
-   import tracelet from 'tracelet-vite';
+   import tracelet from '@traceletdev/vite';
 
    export default defineConfig({
      plugins: [
@@ -90,6 +95,7 @@ collect(); // Collects stats and writes to .tracelet/stats.json
    ```
 
 3. Build your app:
+
    ```bash
    npm run build
    ```
@@ -98,7 +104,7 @@ collect(); // Collects stats and writes to .tracelet/stats.json
 
 ### How It Works
 
-The `tracelet-vite` plugin:
+The `@traceletdev/vite` plugin:
 
 - Hooks into Vite's `generateBundle` phase
 - Analyzes entry chunks and calculates gzip-compressed sizes
@@ -128,7 +134,7 @@ For projects not using npm packages, you can use the adapter scripts directly:
 
 ```bash
 # After building your Next.js app
-node node_modules/tracelet/adapters/next-collect.js
+node node_modules/@traceletdev/cli/adapters/next-collect.js
 ```
 
 ### Vite
@@ -198,10 +204,10 @@ You can trigger collection manually:
 
 ```bash
 # Next.js
-node node_modules/tracelet-next/collect.js
+npx tracelet-next collect
 
 # Or programmatically
-node -e "require('tracelet-next')()"
+node -e "require('@traceletdev/next')()"
 ```
 
 ### CI/CD Integration
@@ -214,7 +220,7 @@ In CI pipelines, ensure adapters run after builds:
   run: npm run build
 
 - name: Collect Tracelet stats
-  run: node node_modules/tracelet-next/collect.js
+  run: npx tracelet-next collect
 
 - name: Run Tracelet lint
   run: npx tracelet lint
@@ -224,8 +230,7 @@ In CI pipelines, ensure adapters run after builds:
 
 To add support for a new framework:
 
-1. Create adapter in `packages/tracelet-<framework>/`
+1. Create adapter in `packages/tracelet-<framework>/` (published as `@traceletdev/<framework>`)
 2. Follow the stats schema: `{ routes: [{ path, jsGzipBytes, thirdPartyJsBytes }] }`
 3. Write to `.tracelet/stats.json`
 4. Document setup in this file
-

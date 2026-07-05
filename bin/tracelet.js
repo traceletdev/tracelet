@@ -3,42 +3,42 @@
 'use strict';
 
 const { spawn } = require('child_process');
-const path = require('path');
 const fs = require('fs');
 
 // Platform detection
-const platform = process.platform;
-const arch = process.arch;
+const platform = process.platform; // 'darwin' | 'linux' | 'win32'
+const arch = process.arch; // 'arm64' | 'x64'
 
-// Map Node.js platform/arch to our binary names
-const platformMap = {
-  'darwin': platform === 'darwin' ? (arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64') : null,
-  'linux': platform === 'linux' ? (arch === 'arm64' ? 'linux-arm64' : 'linux-x64') : null,
-  'win32': platform === 'win32' ? (arch === 'arm64' ? 'win32-arm64' : 'win32-x64') : null,
-};
+const supportedPlatforms = new Set(['darwin', 'linux', 'win32']);
+const supportedArches = new Set(['arm64', 'x64']);
 
-const binaryDir = platformMap[platform] || platformMap[process.platform];
-if (!binaryDir) {
+if (!supportedPlatforms.has(platform) || !supportedArches.has(arch)) {
   console.error(`[tracelet] Unsupported platform: ${platform}-${arch}`);
   process.exit(1);
 }
 
 const binaryName = platform === 'win32' ? 'tracelet.exe' : 'tracelet';
-const binaryPath = path.join(__dirname, '..', 'binaries', binaryDir, binaryName);
+const packageName = `@traceletdev/cli-${platform}-${arch}`;
 
-// Check if binary exists
-if (!fs.existsSync(binaryPath)) {
-  console.error(`[tracelet] Binary not found at ${binaryPath}`);
-  console.error(`[tracelet] Please run 'npm run postinstall' or reinstall the package`);
+// The binary ships in a per-platform optionalDependency (os/cpu-gated), so npm
+// only installs the one matching package. require.resolve finds it without
+// needing a postinstall copy/symlink step.
+let binaryPath;
+try {
+  binaryPath = require.resolve(`${packageName}/bin/${binaryName}`);
+} catch (err) {
+  console.error(`[tracelet] Could not find the platform binary package "${packageName}".`);
+  console.error(
+    `[tracelet] This usually means npm skipped installing it (platform mismatch) or the install failed. Try reinstalling.`
+  );
   process.exit(1);
 }
 
-// Make binary executable on Unix-like systems
 if (platform !== 'win32') {
   try {
-    fs.chmodSync(binaryPath, '755');
+    fs.chmodSync(binaryPath, 0o755);
   } catch (e) {
-    // Ignore if chmod fails
+    // Ignore if chmod fails — the tarball should already preserve the bit.
   }
 }
 
@@ -55,6 +55,5 @@ child.on('error', (err) => {
 });
 
 child.on('exit', (code) => {
-  process.exit(code || 0);
+  process.exit(code === null ? 1 : code);
 });
-

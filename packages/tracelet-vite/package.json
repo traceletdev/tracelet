@@ -1,11 +1,14 @@
 {
-  "name": "tracelet-vite",
-  "version": "0.5.0",
+  "name": "@traceletdev/vite",
+  "version": "0.5.1",
   "description": "Tracelet plugin for Vite - automatically collects route statistics during builds",
   "type": "commonjs",
   "main": "index.cjs",
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
-    "tracelet": "^0.5.0",
+    "@traceletdev/cli": "^0.5.0",
     "vite": ">=4.0.0"
   },
   "keywords": [
@@ -18,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/traceletdev/tracelet.git",
+    "url": "git+https://github.com/traceletdev/tracelet.git",
     "directory": "packages/tracelet-vite"
   },
   "files": [

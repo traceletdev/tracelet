@@ -22,19 +22,9 @@ git branch -M main
 git push -u origin main
 ```
 
-## 2. Set Up GitHub Secrets
+## 2. Set Up npm Publishing
 
-### NPM Token
-
-1. Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
-2. Click "Generate New Token"
-3. Select "Automation" type
-4. Copy the token
-5. In GitHub repo: Settings → Secrets and variables → Actions
-6. Click "New repository secret"
-7. Name: `NPM_TOKEN`
-8. Value: paste your npm token
-9. Click "Add secret"
+See **RELEASE.md → Prerequisites** for Trusted Publisher setup on npmjs.com.
 
 ## 3. Create First Release
 
@@ -47,6 +37,7 @@ git push origin v0.5.0
 ```
 
 The release workflow will automatically:
+
 - Build binaries for all platforms
 - Package them for npm
 - Publish to npm registry
@@ -57,15 +48,15 @@ The release workflow will automatically:
 Check that packages were published:
 
 ```bash
-npm view tracelet
-npm view tracelet-next
-npm view tracelet-vite
+npm view @traceletdev/cli
+npm view @traceletdev/next
+npm view @traceletdev/vite
 ```
 
 Test installation:
 
 ```bash
-npm install -D tracelet@latest tracelet-next@latest
+npm install -D @traceletdev/cli@latest @traceletdev/next@latest
 npx tracelet --version
 ```
 
@@ -81,4 +72,3 @@ npx tracelet --version
 - Configure required status checks for PRs
 - Add CODEOWNERS file if needed
 - Set up dependabot for security updates
-

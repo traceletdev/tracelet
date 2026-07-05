@@ -23,11 +23,11 @@ It keeps performance **visible**, **linted**, and **actionable** from developmen
 
 ```bash
 # Install tracelet CLI
-npm install -D tracelet
+npm install -D @traceletdev/cli
 
 # Install framework plugin (choose one)
-npm install -D tracelet-next    # for Next.js
-npm install -D tracelet-vite    # for Vite
+npm install -D @traceletdev/next    # for Next.js
+npm install -D @traceletdev/vite    # for Vite
 ```
 
 **Or build from source:**
@@ -51,19 +51,21 @@ This creates `tracelet.config.json` and `.tracelet/` directory.
 ### Framework Setup
 
 **Next.js:**
+
 ```json
 // package.json
 {
   "scripts": {
-    "postbuild": "node node_modules/tracelet-next/collect.js"
+    "postbuild": "tracelet-next collect"
   }
 }
 ```
 
 **Vite:**
+
 ```js
 // vite.config.js
-import tracelet from 'tracelet-vite';
+import tracelet from '@traceletdev/vite';
 export default defineConfig({ plugins: [tracelet()] });
 ```
 
@@ -90,6 +92,7 @@ npx tracelet probe http://localhost:3000 --profile mobile --runs 3
 ## Features
 
 ### 1. **Tracelet Lint**
+
 - Lints per-route budgets (`initialJs`, `thirdPartyJs`, etc.)
 - Rules for `unoptimized-image`, `font-display`, `large-lib`
 - Supports Next.js, Vite, Astro (via adapters)
@@ -97,6 +100,7 @@ npx tracelet probe http://localhost:3000 --profile mobile --runs 3
 - JSON, CLI, and Markdown outputs
 
 ### 2. **Tracelet Probe**
+
 - Fast, deterministic Chrome-based performance audit
 - Collects: **TTFB, FCP, LCP, CLS, TBT-Lite, FSI**
 - Runs in 2–3 seconds
@@ -104,18 +108,21 @@ npx tracelet probe http://localhost:3000 --profile mobile --runs 3
 - Outputs JSON for CI and HUD consumption
 
 ### 3. **Tracelet HUD**
+
 - Real-time overlay for development servers
 - Connects via WebSocket
 - Displays route budgets + live probe snapshots
 - Visual color-coding for over-budget areas
 
 ### 4. **Tracelet CI**
+
 - Runs `lint` and `probe` in pipelines
 - Compares results with baselines
 - Posts GitHub PR comments summarizing changes
 - Fails builds if "error"-level rules are violated
 
 ### 5. **VS Code Integration**
+
 - In-editor diagnostics with squiggles
 - Quick Fix actions for common issues
 - Status bar showing route sizes
@@ -124,17 +131,20 @@ npx tracelet probe http://localhost:3000 --profile mobile --runs 3
 ## User Journeys
 
 ### Developer (Local)
-1. Install: `npm i -D tracelet && tracelet init`
+
+1. Install: `npm i -D @traceletdev/cli && tracelet init`
 2. Run: `tracelet lint`
 3. Fix issues via `tracelet fix` or in-editor Quick Fix
 4. See live feedback via HUD overlay
 
 ### Team (CI/CD)
+
 1. Add GitHub Action to `.github/workflows/tracelet.yml`
 2. On PR: Bot posts Markdown table comparing metrics
 3. CI fails if "error"-level thresholds breached
 
 ### Tech Lead
+
 - Run `tracelet ci --compare=baseline` for trend analysis
 - Monitor performance evolution via baseline diffs
 
@@ -151,9 +161,9 @@ Tracelet isn't another framework or metric viewer —
 it's the **performance layer of your development loop**.
 
 It's built for speed, clarity, and integration:
+
 - **Lint** performance budgets like code
 - **Probe** runtime behavior in seconds
 - **See** results live in your editor or CI
 
 > **Tracelet** — performance you can lint.
-
