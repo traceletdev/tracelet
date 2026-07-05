@@ -84,16 +84,25 @@ jobs:
       # Requires a Trusted Publisher configured on each package at npmjs.com
       # (repo: traceletdev/tracelet, workflow: release.yml) — see RELEASE.md.
       # Platform binary packages publish first so @traceletdev/cli's
-      # optionalDependencies resolve once it publishes last.
+      # optionalDependencies resolve once it publishes last. Skips any package
+      # already published at this version (e.g. after a manual bootstrap).
       - name: Publish to npm
         run: |
+          publish_if_new() {
+            local name="$1" dir="$2" version="${{ steps.version.outputs.version }}"
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "skip: $name@$version already published"
+            else
+              (cd "$dir" && npm publish --access public)
+            fi
+          }
           for dir in cli-darwin-arm64 cli-darwin-x64 cli-linux-arm64 cli-linux-x64 cli-win32-arm64 cli-win32-x64; do
-            (cd packages/$dir && npm publish --access public)
+            publish_if_new "@traceletdev/$dir" "packages/$dir"
           done
-          cd packages/tracelet-next && npm publish --access public
-          cd ../tracelet-vite && npm publish --access public
-          cd ../tracelet-react && npm publish --access public
-          cd ../.. && npm publish --access public
+          publish_if_new "@traceletdev/next" packages/tracelet-next
+          publish_if_new "@traceletdev/vite" packages/tracelet-vite
+          publish_if_new "@traceletdev/react" packages/tracelet-react
+          publish_if_new "@traceletdev/cli" .
         working-directory: .
 
       - name: Create GitHub Release
