@@ -19,6 +19,11 @@
   ],
   "author": "Moiz Imran <moizwasti@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/traceletdev/tracelet.git",
+    "directory": "packages/tracelet-react"
+  },
   "peerDependencies": {
     "react": ">=16.0.0"
   }
