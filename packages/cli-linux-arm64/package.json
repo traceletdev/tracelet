@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/cli-linux-arm64",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "tracelet CLI binary for linux/arm64. Installed automatically as an optional dependency of @traceletdev/cli — not meant to be installed directly.",
   "os": [
     "linux"

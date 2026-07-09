@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/cli",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Performance toolkit that brings Lighthouse-level insight and ESLint-level ergonomics",
   "type": "commonjs",
   "main": "bin/tracelet.js",

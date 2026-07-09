@@ -9,6 +9,24 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 
 ## [Unreleased]
 
+## [0.6.0]
+
+### Added
+
+- **HUD auto-start in `@traceletdev/next`**: new `withTracelet(nextConfig)` wrapper
+  for `next.config.mjs`/`next.config.js`. Running `next dev` now automatically
+  starts the HUD server and injects the overlay — no separate `tracelet hud`
+  process or manual `<script>` tags needed.
+- **HUD auto-start in `@traceletdev/vite`**: the Vite plugin now handles dev mode.
+  In `vite dev`, the HUD server is spawned and `hook.js`/`overlay.js` are injected
+  into every HTML response via `transformIndexHtml`.
+- `hud-spawn.js` shared utility used by both plugins to locate and launch the
+  tracelet binary, with clean child-process lifecycle management.
+- `hud-dev-entry.js` webpack entry injected by `withTracelet` to load the overlay
+  script before the app bundle renders.
+- HUD screenshot in `docs/hud-screenshot.png`, captured on a live Next.js app
+  showing real route budget violations.
+
 ## [0.5.1]
 
 ### Added
@@ -45,6 +63,7 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 
 - Initial public release: lint, probe, HUD, CI, and VS Code extension.
 
-[Unreleased]: https://github.com/traceletdev/tracelet/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/traceletdev/tracelet/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/traceletdev/tracelet/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/traceletdev/tracelet/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/traceletdev/tracelet/releases/tag/v0.5.0

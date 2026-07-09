@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/next",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Tracelet plugin for Next.js - automatically collects route statistics after builds",
   "type": "commonjs",
   "main": "index.js",
@@ -31,6 +31,8 @@
     "index.js",
     "cli.js",
     "collect.js",
+    "hud-spawn.js",
+    "hud-dev-entry.js",
     "README.md"
   ]
 }

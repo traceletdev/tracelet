@@ -79,17 +79,39 @@ tracelet probe http://localhost:3000 --profile mobile
 
 Real-time overlay for development. See live performance feedback in your browser.
 
-```bash
-tracelet hud
-# Then add <script src="http://localhost:3111/overlay.js"></script> to your app
+![Tracelet HUD showing route budget violations on a live Next.js app](./docs/hud-screenshot.png)
+
+The HUD starts automatically when you run your dev server — no separate process or `<script>` tags needed.
+
+**Next.js** — wrap your config with `withTracelet`:
+
+```js
+// next.config.mjs
+import { withTracelet } from '@traceletdev/next';
+export default withTracelet({ /* ...your config */ });
 ```
 
-The overlay shows a **Routes** tab (lint budgets), a **Metrics** tab (live Web Vitals), and a
-**Components** tab (React re-render counts). React tracking needs its hook loaded *before* React —
-add this to `<head>`, before your app bundle:
+**Vite** — the plugin handles it automatically in dev mode:
 
+```js
+// vite.config.js
+import tracelet from '@traceletdev/vite';
+export default defineConfig({ plugins: [tracelet()] });
+```
+
+That's it. `pnpm dev` (or `npm run dev`) will start the HUD server and inject the overlay. The overlay shows a **Routes** tab (lint budgets), a **Metrics** tab (live Web Vitals), and a **Components** tab (React re-render counts).
+
+**Manual setup** (without a framework plugin):
+
+```bash
+tracelet hud
+```
+Then add to your app's HTML:
 ```html
+<!-- In <head>, before your app bundle -->
 <script src="http://localhost:3111/hook.js"></script>
+<!-- Before </body> -->
+<script src="http://localhost:3111/overlay.js"></script>
 ```
 
 See [`@traceletdev/react`](./packages/tracelet-react/README.md) for the bundled-app (`import`) setup.
