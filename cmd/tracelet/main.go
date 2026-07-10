@@ -17,6 +17,10 @@ import (
 	"tracelet/internal/reporters"
 )
 
+// version is stamped at release time via -ldflags "-X main.version=...".
+// Unstamped local/dev builds report "dev".
+var version = "dev"
+
 type globalFlags struct {
 	configPath string
 	quiet      bool
@@ -326,7 +330,7 @@ func runHUD(args []string) {
 		resolvedPort = 3111
 	}
 
-	if err := hud.Start(resolvedPort, *cfgPath); err != nil {
+	if err := hud.Start(resolvedPort, *cfgPath, version); err != nil {
 		fmt.Fprintf(os.Stderr, "hud error: %v\n", err)
 		os.Exit(2)
 	}

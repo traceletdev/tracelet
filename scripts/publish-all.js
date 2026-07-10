@@ -54,6 +54,17 @@ function setVersion(pkgPath, version) {
   const pkgJsonPath = path.join(pkgPath, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
   pkg.version = version;
+  // Keep the exact-pinned platform binary packages in lockstep. @traceletdev/cli
+  // resolves its actual binary through these optionalDependencies, so a stale pin
+  // silently ships the OLD binary even after everything else is bumped (this is
+  // exactly how 0.6.0 shipped while still pinning 0.5.1 binaries).
+  if (pkg.optionalDependencies) {
+    for (const dep of Object.keys(pkg.optionalDependencies)) {
+      if (dep.startsWith('@traceletdev/cli-')) {
+        pkg.optionalDependencies[dep] = version;
+      }
+    }
+  }
   fs.writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   console.log(`✓ Updated ${pkg.name} to ${version}`);
 }

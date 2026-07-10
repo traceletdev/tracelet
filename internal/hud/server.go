@@ -75,7 +75,7 @@ func (h *Hub) Broadcast(v interface{}) {
 	}
 }
 
-func Start(port int, cfgPath string) error {
+func Start(port int, cfgPath string, version string) error {
 	hub := NewHub()
 
 	// If a config path is provided, change working directory to its directory
@@ -207,6 +207,14 @@ func Start(port int, cfgPath string) error {
 		fmt.Fprint(w, getReactInstrumentationCode())
 	})
 
+	// /healthz reports which build is actually serving, so a spawner can tell a
+	// leftover HUD from a previous session apart from the current one instead of
+	// silently reusing whatever already holds the port.
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"version": version})
+	})
+
 	// periodic lint and broadcast
 	go func() {
 		for {
@@ -249,10 +257,12 @@ func overlayJS(port int) string {
 	return fmt.Sprintf(`(function(){
       if (window.__traceletHUD) return;
 
-      // Create container
+      // Create container. Shadow DOM keeps the overlay's internals (ids,
+      // structure) out of the host page's document.querySelectorAll results —
+      // a host app with broad selectors (e.g. '[id]') should never see them.
       var container = document.createElement('div');
-      container.id = '__tracelet_hud';
       container.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;font-family:ui-sans-serif,system-ui,-apple-system;font-size:13px;pointer-events:auto;';
+      var shadowRoot = container.attachShadow({mode: 'open'});
 
       // Create header (collapsible)
       var header = document.createElement('div');
@@ -265,10 +275,8 @@ func overlayJS(port int) string {
       var toggle = document.createElement('span');
       toggle.style.cssText = 'color:#888;font-size:12px;transition:transform 0.2s;';
       toggle.textContent = '−';
-      toggle.id = '__tracelet_toggle';
 
       var refreshBtn = document.createElement('span');
-      refreshBtn.id = '__tracelet_refresh_btn';
       var currentRotation = 0;
       refreshBtn.style.cssText = 'color:#888;font-size:24px;margin-left:8px;cursor:pointer;border-radius:4px;transition:transform 1.2s ease;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;';
       refreshBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw" style="display:block;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
@@ -293,7 +301,6 @@ func overlayJS(port int) string {
 
       // Create content panel
       var content = document.createElement('div');
-      content.id = '__tracelet_content';
       content.style.cssText = 'background:rgba(17,17,17,0.95);backdrop-filter:blur(10px);color:#fff;padding:12px 14px;border-radius:0 0 8px 8px;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-height:400px;overflow-y:auto;transition:max-height 0.3s ease,opacity 0.2s;';
       content.style.maxHeight = '400px';
 
@@ -314,19 +321,16 @@ func overlayJS(port int) string {
       content.appendChild(tabs);
 
       var routesList = document.createElement('div');
-      routesList.id = '__tracelet_routes';
       routesList.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
       content.appendChild(routesList);
 
       var metricsList = document.createElement('div');
-      metricsList.id = '__tracelet_metrics';
       metricsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
       content.appendChild(metricsList);
 
       // Reset control for the Components tab: zero counts, do one interaction,
       // see exactly what it re-rendered.
       var componentsBar = document.createElement('div');
-      componentsBar.id = '__tracelet_components_bar';
       componentsBar.style.cssText = 'display:none;justify-content:flex-end;margin-bottom:6px;';
       var resetBtn = document.createElement('button');
       resetBtn.textContent = '⟲ Reset counts';
@@ -340,7 +344,6 @@ func overlayJS(port int) string {
       content.appendChild(componentsBar);
 
       var componentsList = document.createElement('div');
-      componentsList.id = '__tracelet_components';
       componentsList.style.cssText = 'display:none;flex-direction:column;gap:8px;';
       content.appendChild(componentsList);
 
@@ -365,10 +368,10 @@ func overlayJS(port int) string {
       // Add pulse animation
       var style = document.createElement('style');
       style.textContent = '@keyframes pulse{0%%,100%%{opacity:1;}50%%{opacity:0.5;}}';
-      document.head.appendChild(style);
+      shadowRoot.appendChild(style);
 
-      container.appendChild(header);
-      container.appendChild(content);
+      shadowRoot.appendChild(header);
+      shadowRoot.appendChild(content);
 
       var isCollapsed = false;
       header.addEventListener('click', function(){
@@ -769,7 +772,7 @@ func overlayJS(port int) string {
         });
 
         function updateMetricsDisplay(){
-          var metricsEl = document.getElementById('__tracelet_metrics');
+          var metricsEl = metricsList;
           if (!metricsEl) return;
           metricsEl.innerHTML = '';
           var routes = Object.keys(routeMetrics).sort();
@@ -852,7 +855,7 @@ func overlayJS(port int) string {
       function updateStatus(msg){
         // Handle lint messages
         if (msg.type === 'lint' && msg.stats && msg.stats.routes) {
-          var routesEl = document.getElementById('__tracelet_routes');
+          var routesEl = routesList;
           if (routesEl) {
             routesEl.innerHTML = '';
             var errorCount = 0;
@@ -943,7 +946,7 @@ func overlayJS(port int) string {
       }
 
       function updateComponentsDisplay(components){
-        var componentsEl = document.getElementById('__tracelet_components');
+        var componentsEl = componentsList;
         if (!componentsEl) {
           if (window.__TRACELET_DEBUG) console.warn('[tracelet] Components element not found');
           return;
@@ -983,11 +986,11 @@ func overlayJS(port int) string {
             debugInfo.push('Instrumentation loaded (' + trackedCount + ' component' + (trackedCount !== 1 ? 's' : '') + ' tracked)');
           }
           var msg = 'No React re-renders tracked yet.';
-          msg += '\\n\\nRender tracking needs the tracelet hook to load BEFORE React. Add this to <head>, before your app bundle:';
-          msg += '\\n<script src="http://localhost:%d/hook.js"></script>';
-          msg += '\\n\\nOr, in a bundled app, import "@traceletdev/react" as the first line of your dev entry.';
+          msg += '\n\nRender tracking needs the tracelet hook to load BEFORE React. Add this to <head>, before your app bundle:';
+          msg += '\n<script src="http://localhost:%d/hook.js"></script>';
+          msg += '\n\nOr, in a bundled app, import "@traceletdev/react" as the first line of your dev entry.';
           if (debugInfo.length > 0) {
-            msg += '\\n\\nStatus: ' + debugInfo.join(', ');
+            msg += '\n\nStatus: ' + debugInfo.join(', ');
           }
           empty.style.whiteSpace = 'pre-line';
           empty.textContent = msg;

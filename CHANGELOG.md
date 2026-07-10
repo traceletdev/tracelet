@@ -9,6 +9,44 @@ attached to each [GitHub Release](https://github.com/traceletdev/tracelet/releas
 
 ## [Unreleased]
 
+## [0.6.1]
+
+### Fixed
+
+- **HUD dev-entry hydration mismatch**: `hud-dev-entry.js` injected `hook.js`/
+  `overlay.js` synchronously into `<head>` before React's `hydrateRoot()` read
+  the SSR'd head children, shifting sibling positions mid-diff and producing
+  hydration errors on apps with static `<head>` content (e.g. JSON-LD).
+  Injection is now deferred past the synchronous hydration commit.
+- **HUD overlay DOM leaked into the host page**: the overlay's internal
+  elements (`__tracelet_hud`, `__tracelet_content`, etc.) lived in the host's
+  light DOM, so a host app's broad `document.querySelectorAll('[id]')` could
+  pick them up — combined with a naive `IntersectionObserver`, this caused
+  runaway re-render cascades in host apps. The overlay now renders inside a
+  Shadow DOM and no longer assigns any ids at all.
+- **React render-count over-counting**: `onCommit` compared a fiber's
+  `memoizedProps`/`memoizedState` against its `alternate` (the other
+  persistent work buffer) instead of the previous walk's recorded values. Once
+  a component had rendered a few times, its two buffers permanently held
+  divergent references — so when React later reused that fiber's subtree
+  untouched (bailed-out, e.g. a non-memoized child of a memoized parent), the
+  walker kept flagging it as re-rendered on every unrelated commit elsewhere in
+  the app, wildly inflating its count. Fixed by comparing against the
+  previously-recorded props/state instead of the alternate buffer.
+- **Stale `optionalDependencies` pins**: `@traceletdev/cli`'s platform-binary
+  pins (`@traceletdev/cli-<platform>`) were left at `0.5.1` when 0.6.0
+  shipped, so every HUD fix since 0.5.1 was unreachable by anyone installing
+  from npm regardless of the CLI's own version. `scripts/publish-all.js` now
+  keeps these pins in lockstep with the package version automatically.
+- **`hud-spawn.js` silently reusing stale HUD processes**: finding port 3111
+  occupied was treated as "another HUD is already running," with no check on
+  whether it was even the current version — a leftover process from an
+  earlier session could serve stale HUD code indefinitely across `next dev`
+  restarts. The HUD server now exposes `/healthz` (build version), and
+  `spawnHud()` probes it before reusing an occupied port, warning loudly when
+  the existing process is stale or unrecognized instead of reusing it
+  silently.
+
 ## [0.6.0]
 
 ### Added

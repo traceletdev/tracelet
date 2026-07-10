@@ -31,7 +31,7 @@
 
   var idMap = new WeakMap(); // fiber -> instance id (fibers are non-extensible,
                              // so we can't tag them directly — WeakMap works)
-  var instances = {};      // instance id -> { name, count }
+  var instances = {};      // instance id -> { name, count, seen, props, state }
   var nextId = 1;          // monotonic; never reset (avoids id reuse collisions)
 
   // Stable per-instance id across the fiber double-buffer: current/alternate
@@ -67,13 +67,22 @@
     return isNoise(name) ? null : name;
   }
 
-  // We walk the whole current tree each commit, so we must distinguish fibers
-  // that rendered THIS commit from ones just sitting in a bailed-out subtree.
-  // - Updated fibers have an alternate; they rendered iff memoizedProps or
-  //   memoizedState changed vs it (a bailout reuses both references). The
-  //   PerformedWork flag is unreliable — it stays stale on reused fibers.
-  // - Never-updated fibers keep alternate === null forever, so we count their
-  //   mount exactly once (rec.seen) rather than on every walk.
+  // We walk the whole current tree on EVERY commit (anywhere in the app), so we
+  // must distinguish fibers that actually rendered THIS commit from ones just
+  // sitting in a bailed-out subtree that the walk happened to revisit.
+  //
+  // A render always leaves a fresh reference behind: renderWithHooks rebuilds
+  // the hooks list (new memoizedState) and the parent recreates the child
+  // element (new memoizedProps). A fiber that bailed out keeps BOTH references
+  // untouched — even as React ping-pongs it between its two work buffers.
+  //
+  // So we compare against the values recorded on the PREVIOUS walk of this same
+  // instance id — not against fiber.alternate. The alternate is the OTHER
+  // persistent buffer; once a component has rendered twice with different
+  // props, its two buffers permanently hold different references, and when the
+  // fiber is later reused-not-cloned on an unrelated commit (a memoized
+  // parent's non-memo child hits exactly this path) alt !== fiber stays true
+  // forever, over-counting on every foreign commit.
   function onCommit(root) {
     if (!root || !root.current) return;
     var stack = [root.current];
@@ -84,14 +93,15 @@
       var name = getDisplayName(fiber);
       if (name) {
         var id = instanceId(fiber);
-        var rec = instances[id] || (instances[id] = { name: name, count: 0, seen: false });
+        var rec = instances[id] || (instances[id] = { name: name, count: 0, seen: false, props: undefined, state: undefined });
         rec.name = name;
-        var alt = fiber.alternate;
-        var rendered = alt == null
-          ? !rec.seen // mount: count once
-          : (alt.memoizedProps !== fiber.memoizedProps || alt.memoizedState !== fiber.memoizedState);
+        var rendered = !rec.seen // mount: count once
+          || fiber.memoizedProps !== rec.props
+          || fiber.memoizedState !== rec.state;
         if (rendered) rec.count++;
         rec.seen = true;
+        rec.props = fiber.memoizedProps;
+        rec.state = fiber.memoizedState;
       }
       if (fiber.child) stack.push(fiber.child);
       if (fiber.sibling) stack.push(fiber.sibling);

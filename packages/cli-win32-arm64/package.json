@@ -1,6 +1,6 @@
 {
   "name": "@traceletdev/cli-win32-arm64",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "tracelet CLI binary for win32/arm64. Installed automatically as an optional dependency of @traceletdev/cli — not meant to be installed directly.",
   "os": [
     "win32"
