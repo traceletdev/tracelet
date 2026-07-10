@@ -11,12 +11,12 @@
     "access": "public"
   },
   "optionalDependencies": {
-    "@traceletdev/cli-darwin-arm64": "0.6.1",
-    "@traceletdev/cli-darwin-x64": "0.6.1",
-    "@traceletdev/cli-linux-arm64": "0.6.1",
-    "@traceletdev/cli-linux-x64": "0.6.1",
-    "@traceletdev/cli-win32-arm64": "0.6.1",
-    "@traceletdev/cli-win32-x64": "0.6.1"
+    "@traceletdev/cli-darwin-arm64": "0.6.0",
+    "@traceletdev/cli-darwin-x64": "0.6.0",
+    "@traceletdev/cli-linux-arm64": "0.6.0",
+    "@traceletdev/cli-linux-x64": "0.6.0",
+    "@traceletdev/cli-win32-arm64": "0.6.0",
+    "@traceletdev/cli-win32-x64": "0.6.0"
   },
   "scripts": {
     "build:bin": "echo 'Run: goreleaser release --snapshot to build binaries, or use go build'",
